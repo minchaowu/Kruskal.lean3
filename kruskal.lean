@@ -1,31 +1,75 @@
 import data.list
 open nat function
 
--- lemmas of fin
-
-namespace fin
-
-def lift_succ {n : ℕ} : fin n → fin (succ n) 
-| (mk v h) := mk v (lt.trans h (lt_succ_self n))
-
-def lift_list_succ {n : ℕ} (l : list (fin n)) : list (fin (succ n)) :=
-list.map lift_succ l
-
-def upto (n : ℕ) : list (fin n) :=
-nat.rec_on n [] (λ m upto', 
-(mk m (lt_succ_self m)) :: lift_list_succ upto')
-
-end fin
-
 -- lemmas of list
 
 namespace list
+
+variables {A B: Type} 
+
+theorem mem_cons (x : A) (l : list A) : x ∈ x :: l :=
+or.inl rfl
 
 def upto : ℕ → list ℕ
 | 0      := []
 | (n + 1) := n :: upto n
 
+theorem lt_of_mem_upto {n i : nat} : i ∈ upto n → i < n :=
+nat.rec_on n (λ h, absurd h (not_mem_nil i)) 
+(λ a ih h, _)
+
+def dmap (p : A → Prop) [h : decidable_pred p] (f : Π a, p a → B) : list A → list B
+| [] := []
+| (a::l) := if P : (p a) then list.cons (f a P) (dmap l) else (dmap l)
+
+section dmap
+
+variable {p : A → Prop}
+variable [h : decidable_pred p]
+include h
+variable {f : Π a, p a → B}
+
+lemma dmap_nil : dmap p f [] = [] := rfl
+
+lemma dmap_cons_of_pos {a : A} (P : p a) : ∀ l, dmap p f (a::l) = (f a P) :: dmap p f l :=
+λ l, dif_pos P
+
+lemma map_dmap_of_inv_of_pos {g : B → A} (Pinv : ∀ a (Pa : p a), g (f a Pa) = a) :
+∀ {l : list A}, (∀ {{ a }}, a ∈ l → p a ) → map g (dmap p f l) = l
+
+| []     := assume Pl, by rewrite [dmap_nil, map_nil]
+| (a::l) := assume Pal, 
+            have Pa : p a, from Pal (mem_cons _ _),
+            have Pl : ∀ a, a ∈ l → p a,
+              from take x Pxin, Pal (mem_cons_of_mem a Pxin), 
+            by rewrite [dmap_cons_of_pos Pa, map_cons, Pinv, map_dmap_of_inv_of_pos Pl]
+
+end dmap
+
 end list
+
+open list
+
+-- lemmas of fin
+
+namespace fin
+
+lemma val_mk (n i : nat) (Plt : i < n) : fin.val (fin.mk i Plt) = i := rfl
+
+-- def lift_succ {n : ℕ} : fin n → fin (succ n) 
+-- | (mk v h) := mk v (lt.trans h (lt_succ_self n))
+
+-- def lift_list_succ {n : ℕ} (l : list (fin n)) : list (fin (succ n)) :=
+-- list.map lift_succ l
+
+-- def upto (n : ℕ) : list (fin n) :=
+-- nat.rec_on n [] (λ m upto', 
+-- (mk m (lt_succ_self m)) :: lift_list_succ upto')
+
+def upto (n : ℕ) : list (fin n) :=
+dmap (λ i, i < n) fin.mk (list.upto n)
+
+end fin
 
 -- lemmas of bigops
 
@@ -56,8 +100,8 @@ definition size : finite_tree → ℕ
 theorem exists_eq_cons_of_ne_nil {A : Type} {l : list A} : l ≠ [] → ∃ a, ∃ l', l = a::l' := 
 list.rec_on l (λ H, absurd rfl H) (λ a l' IH H, ⟨a, ⟨l',rfl⟩⟩)
 
--- lemma map_val_upto (n : nat) : map fin.val (upto n) = list.upto n := 
--- -- map_dmap_of_inv_of_pos (val_mk n) (@lt_of_mem_upto n) 
+lemma map_val_upto (n : nat) : map fin.val (upto n) = list.upto n := 
+map_dmap_of_inv_of_pos (val_mk n) (@lt_of_mem_upto n) 
  
 -- lemma length_upto (n : nat) : length (fin.upto n) = n := -- in the latest library
 -- calc
