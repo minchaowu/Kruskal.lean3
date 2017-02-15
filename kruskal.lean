@@ -25,8 +25,6 @@ def upto : ℕ → list ℕ
 | 0      := []
 | (n + 1) := n :: upto n
 
-
-
 end list
 
 -- lemmas of bigops
