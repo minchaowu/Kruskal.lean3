@@ -12,11 +12,21 @@ or.inl rfl
 
 def upto : ℕ → list ℕ
 | 0      := []
-| (n + 1) := n :: upto n
+| (succ n) := n :: upto n
 
 theorem lt_of_mem_upto {n i : nat} : i ∈ upto n → i < n :=
 nat.rec_on n (λ h, absurd h (not_mem_nil i)) 
-(λ a ih h, _)
+(λ a ih h, or.elim h 
+(begin intro l, rw l, apply lt_succ_self end) 
+(λ r, lt_trans (ih r) (lt_succ_self a)))
+
+theorem upto_succ (n : nat) : upto (succ n) = n :: upto n := rfl
+
+check @length_cons
+
+theorem length_upto : ∀ n, length (upto n) = n
+| 0        := rfl
+| (succ n) := begin simp [upto_succ, length_cons, length_upto], apply rfl end
 
 def dmap (p : A → Prop) [h : decidable_pred p] (f : Π a, p a → B) : list A → list B
 | [] := []
@@ -56,18 +66,24 @@ namespace fin
 
 lemma val_mk (n i : nat) (Plt : i < n) : fin.val (fin.mk i Plt) = i := rfl
 
--- def lift_succ {n : ℕ} : fin n → fin (succ n) 
--- | (mk v h) := mk v (lt.trans h (lt_succ_self n))
-
--- def lift_list_succ {n : ℕ} (l : list (fin n)) : list (fin (succ n)) :=
--- list.map lift_succ l
-
--- def upto (n : ℕ) : list (fin n) :=
--- nat.rec_on n [] (λ m upto', 
--- (mk m (lt_succ_self m)) :: lift_list_succ upto')
-
 def upto (n : ℕ) : list (fin n) :=
 dmap (λ i, i < n) fin.mk (list.upto n)
+
+lemma map_val_upto (n : nat) : map fin.val (upto n) = list.upto n := 
+map_dmap_of_inv_of_pos (val_mk n) (@lt_of_mem_upto n) 
+
+lemma length_upto (n : nat) : length (fin.upto n) = n :=
+calc
+  length (fin.upto n) = length (list.upto n) : (map_val_upto n ▸ eq.symm (length_map fin.val (upto n)))
+  ... = n                    : length_upto n
+ 
+lemma upto_ne_nil_of_ne_zero (n : nat) (Hn : n ≠ 0) : fin.upto n ≠ [] := 
+begin 
+  intro Hup, 
+  apply Hn, 
+  rewrite [-(@length_nil (fin n)), -Hup], 
+  apply eq.symm (length_upto _)
+end 
 
 end fin
 
@@ -100,25 +116,8 @@ definition size : finite_tree → ℕ
 theorem exists_eq_cons_of_ne_nil {A : Type} {l : list A} : l ≠ [] → ∃ a, ∃ l', l = a::l' := 
 list.rec_on l (λ H, absurd rfl H) (λ a l' IH H, ⟨a, ⟨l',rfl⟩⟩)
 
-lemma map_val_upto (n : nat) : map fin.val (upto n) = list.upto n := 
-map_dmap_of_inv_of_pos (val_mk n) (@lt_of_mem_upto n) 
- 
--- lemma length_upto (n : nat) : length (fin.upto n) = n := -- in the latest library
--- calc
---   length (fin.upto n) = length (list.upto n) : sorry--(map_val_upto n ▸ length_map fin.val (upto n))⁻¹
---   ... = n                    : sorry --length_upto n
- 
--- lemma upto_ne_nil_of_ne_zero (n : nat) (Hn : n ≠ 0) : upto n ≠ [] := 
--- begin 
---   intro Hup, 
---   apply Hn, 
---   rewrite [-(@length_nil (fin n)), -Hup], 
---   apply eq.symm !length_upto 
--- end 
-
--- theorem pos_of_size (t : finite_tree) : 0 < size t :=
--- finite_tree.induction_on t dec_trivial 
--- (λ n, λ ts, λ IH,  by+ apply dec_trivial)
+theorem pos_of_size (t : finite_tree) : 0 < size t :=
+finite_tree.rec_on t (λ n ts ih, dec_trivial)
 
 -- theorem pos_of_Suml {n : ℕ} (H : n ≠ 0) (ts : fin n → finite_tree) : 0 < Suml (upto n) (λ i, size (ts i)) :=
 -- have upto n ≠ nil, from upto_ne_nil_of_ne_zero n H,
