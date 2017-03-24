@@ -22,39 +22,39 @@ nat.rec_on n (λ h, absurd h (not_mem_nil i))
 
 theorem upto_succ (n : nat) : upto (succ n) = n :: upto n := rfl
 
-check @length_cons
-
 theorem length_upto : ∀ n, length (upto n) = n
 | 0        := rfl
 | (succ n) := begin simp [upto_succ, length_cons, length_upto], apply rfl end
+
+print filter
 
 def dmap (p : A → Prop) [h : decidable_pred p] (f : Π a, p a → B) : list A → list B
 | [] := []
 | (a::l) := if P : (p a) then list.cons (f a P) (dmap l) else (dmap l)
 
-section dmap
+  section dmap
 
-variable {p : A → Prop}
-variable [h : decidable_pred p]
-include h
-variable {f : Π a, p a → B}
+  variable {p : A → Prop}
+  variable [h : decidable_pred p]
+  include h
+  variable {f : Π a, p a → B}
 
-lemma dmap_nil : dmap p f [] = [] := rfl
+  lemma dmap_nil : dmap p f [] = [] := rfl
 
-lemma dmap_cons_of_pos {a : A} (P : p a) : ∀ l, dmap p f (a::l) = (f a P) :: dmap p f l :=
-λ l, dif_pos P
+  lemma dmap_cons_of_pos {a : A} (P : p a) : ∀ l, dmap p f (a::l) = (f a P) :: dmap p f l :=
+  λ l, dif_pos P
 
-lemma map_dmap_of_inv_of_pos {g : B → A} (Pinv : ∀ a (Pa : p a), g (f a Pa) = a) :
-∀ {l : list A}, (∀ {{ a }}, a ∈ l → p a ) → map g (dmap p f l) = l
+  lemma map_dmap_of_inv_of_pos {g : B → A} (Pinv : ∀ a (Pa : p a), g (f a Pa) = a) :
+  ∀ {l : list A}, (∀ {{ a }}, a ∈ l → p a ) → map g (dmap p f l) = l
 
-| []     := assume Pl, by rewrite [dmap_nil, map_nil]
-| (a::l) := assume Pal, 
-            have Pa : p a, from Pal (mem_cons _ _),
-            have Pl : ∀ a, a ∈ l → p a,
-              from take x Pxin, Pal (mem_cons_of_mem a Pxin), 
-            by rewrite [dmap_cons_of_pos Pa, map_cons, Pinv, map_dmap_of_inv_of_pos Pl]
+  | []     := assume Pl, by rewrite [dmap_nil, map_nil]
+  | (a::l) := assume Pal, 
+              have Pa : p a, from Pal (mem_cons _ _),
+              have Pl : ∀ a, a ∈ l → p a,
+                from take x Pxin, Pal (mem_cons_of_mem a Pxin), 
+              by rewrite [dmap_cons_of_pos Pa, map_cons, Pinv, map_dmap_of_inv_of_pos Pl]
 
-end dmap
+  end dmap
 
 end list
 
@@ -98,6 +98,8 @@ definition addf {A B : Type} [sgB : add_semigroup B] (f : A → B) : B → A →
 
 definition Suml [add_monoid B] (l : list A) (f : A → B) : B :=
 list.foldl (addf f) 0 l
+
+check add_monoid
 
 end group_bigops
 
@@ -162,8 +164,10 @@ definition embeds : finite_tree → finite_tree → Prop
 
 infix ` ≼ `:50 := embeds  -- \preceq
 
+def node {ts : fin 0 → finite_tree}: finite_tree := cons ts
+
 proposition node_embeds (t : finite_tree) : node ≼ t :=
-by induction t; repeat (apply trivial)
+begin induction t with n a ih, intro, end
 
 proposition not_cons_embeds_node {n : ℕ} (ts : fin n → finite_tree) : ¬ cons ts ≼ node :=
 not_false
