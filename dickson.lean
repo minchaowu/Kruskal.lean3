@@ -50,7 +50,7 @@ show _, from quasiorder.mk op refl trans
 
 def terminal {A : Type} (o : A → A → Prop) (f : ℕ → A) (m : ℕ) := ∀ n, m < n → ¬ o (f m) (f n)
 
-theorem prop_of_non_terminal {A : Type} {o : A → A → Prop} {f : ℕ → A} {m : ℕ} (H : ¬ @terminal _ o f m) : ∃ n, m < n ∧ o (f m) (f n) :=
+theorem lt_of_non_terminal {A : Type} {o : A → A → Prop} {f : ℕ → A} {m : ℕ} (H : ¬ @terminal _ o f m) : ∃ n, m < n ∧ o (f m) (f n) :=
 let ⟨n,h⟩ := exists_not_of_not_forall H in ⟨n,(and_of_not_imp h)⟩
 
 section
@@ -82,7 +82,8 @@ parameter f : ℕ → A
   private def g (n : ℕ) := f (terminal_index n)^.elt_of
 
   lemma terminal_g (n : ℕ) : terminal wqo.le g n := 
-  have ∀ n', (terminal_index n)^.elt_of < n' → ¬ wqo.le (f (terminal_index n)^.elt_of) (f n'), from (has_property (terminal_index n))^.right,
+  have ∀ n', (terminal_index n)^.elt_of < n' → ¬ wqo.le (f (terminal_index n)^.elt_of) (f n'), from 
+    (has_property (terminal_index n))^.right,
   take n', assume h, this (terminal_index n')^.elt_of (increasing_fti h)
 
   lemma bad_g : ¬ is_good g wqo.le := 
@@ -129,7 +130,7 @@ parameter [wqo B]
   (λ pred h', let i' := elt_of h' in
   have lt' : sentinel < i', from (has_property h')^.left,
   have ¬ terminal wqo.le (fst ∘ f) i', from (has_property h')^.right,
-  have ∃ n, i' < n ∧ ((fst ∘ f) i') ≤ ((fst ∘ f) n), from prop_of_non_terminal this,
+  have ∃ n, i' < n ∧ ((fst ∘ f) i') ≤ ((fst ∘ f) n), from lt_of_non_terminal this,
   let i := some this in have i' < i, from (some_spec this)^.left,
   have lt : sentinel < i, from lt.trans lt' this,
   have ∀ r, sentinel < r → ¬ terminal wqo.le (fst ∘ f) r, from some_spec finite_terminal_on_A,
@@ -141,7 +142,7 @@ parameter [wqo B]
 
   private lemma foo (a : ℕ) : h a < h (succ a) ∧ (fst ∘ f) (h a) ≤ (fst ∘ f) (h (succ a)) := 
   have ¬ terminal wqo.le (fst ∘ f) (h a), from (has_property $ h_helper a)^.right,
-  have ∃ n, (h a) < n ∧ ((fst ∘ f) (h a)) ≤ ((fst ∘ f) n), from prop_of_non_terminal this,
+  have ∃ n, (h a) < n ∧ ((fst ∘ f) (h a)) ≤ ((fst ∘ f) n), from lt_of_non_terminal this,
   show _, from some_spec this
 
   theorem property_of_h {i j : ℕ} : i < j → (fst ∘ f) (h i) ≤ (fst ∘ f) (h j) :=
@@ -173,11 +174,13 @@ theorem good_pairs (f : ℕ → A × B) : is_good f (o_for_pairs wqo.le wqo.le) 
 
 end
 
-instance wqo_prod  {A B : Type} [HA : wqo A] [HB : wqo B] : wqo (A × B) :=
+def wqo_prod {A B : Type} [HA : wqo A] [HB : wqo B] : wqo (A × B) :=
 let op : A × B → A × B → Prop := o_for_pairs wqo.le wqo.le in
 have refl : ∀ p : A × B, op p p, by intro; apply and.intro;repeat {apply wqo.refl},
 have trans : ∀ a b c, op a b → op b c → op a c, from λ a b c h1 h2, 
   ⟨wqo.trans h1^.left h2^.left, wqo.trans h1^.right h2^.right⟩,
 show _, from wqo.mk op refl trans good_pairs
+
+-- example {A B : Type} [wqo A] [wqo B] : @wqo.le (A × B) (@wqo_prod A B _ _) = o_for_pairs wqo.le wqo.le := rfl
 
 end kruskal
