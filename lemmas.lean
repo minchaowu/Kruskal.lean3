@@ -1,4 +1,23 @@
-open classical nat function set
+import tools.super
+open classical nat function set tactic
+
+section
+-- some facts about sets in the old library
+
+parameter {X : Type}
+
+theorem ext {a b : set X} (H : ∀x, x ∈ a ↔ x ∈ b) : a = b := funext (λ x, propext (H x))
+
+theorem not_mem_empty (x : X) : ¬ (x ∈ (∅ : set X)) := λ H, H
+
+theorem eq_empty_of_forall_not_mem {s : set X} (H : ∀ x, x ∉ s) : s = ∅ :=
+ext (λ x, iff.intro (λ xs, absurd xs (H x)) (λ xe, absurd xe (not_mem_empty _)))
+
+theorem exists_mem_of_ne_empty {s : set X} (H : s ≠ ∅) : ∃ x, x ∈ s :=
+by_contradiction (λ H', H (eq_empty_of_forall_not_mem (forall_not_of_not_exists H')))
+
+end
+
 
 section
 -- the least number principle.
@@ -17,58 +36,24 @@ nat.induction_on n
       (suppose m = n,
         begin rw this, apply h, exact ih end))
 
-check @lt_or_eq_of_le
- 
-section
-variables m n : ℕ 
-variable A : set ℕ
+lemma wf_aux {A : set ℕ} (n : ℕ) : n ∈ A → ∃ a ∈ A, ∀ b ∈ A, a ≤ b := 
+@complete_induction_on n (λ x, x ∈ A → ∃ a ∈ A, ∀ b ∈ A, a ≤ b)
+(λ k ih h, by_cases
+(suppose ∃ m ∈ A, m <k, let ⟨m, Hmem, Hlt⟩ := this in ih m Hlt Hmem)
+(λ Hn, have ∀ m ∈ A,  ¬ m < k, by super, ⟨k,h,(λ m h, le_of_not_gt $ this m h)⟩))
 
-example (H : ∃ a ∈ A, a < m) : ∃ b, b < m :=
-let ⟨a, h, hle⟩ := H in ⟨a, hle⟩
+theorem wf_of_le (S : set ℕ) (H : S ≠ ∅) : ∃ a ∈ S, ∀ b ∈ S, a ≤ b :=
+let ⟨n,Hn⟩ := exists_mem_of_ne_empty H in wf_aux n Hn
 
-end
+noncomputable definition least (S : set ℕ) (H : S ≠ ∅) : ℕ := some (wf_of_le S H)
 
-lemma alt_of_wf {A : set ℕ} (n : ℕ) (H : n ∈ A): ∃ a ∈ A, ∀ b ∈ A, a ≤ b := 
-@complete_induction_on n (λ k, ∃ a ∈ A, ∀ b ∈ A, a ≤ b)
-(λ k ih, by_cases 
-(suppose ∃ m ∈ A, m <n, let ⟨m, Hmem, Hlt⟩ := this in ih m Hlt)
-(assume Hn, sorry)
-) 
+theorem least_is_mem (S : set ℕ) (H : S ≠ ∅) : least S H ∈ S := 
+let ⟨bound, Ha⟩ := some_spec (wf_of_le S H) in bound
 
--- (take n, assume IH, assume ninA,  
--- by_cases
--- (suppose ∃ m ∈ A,  m < n, 
--- let ⟨m, Hm⟩ := this in
--- IH m (and.right Hm) (and.left Hm))
--- (suppose ¬ ∃ m ∈ A,  m < n, 
--- have ∀ m ∈ A,  ¬ m < n,from sorry, --by rewrite not_bounded_exists at this ; exact this,
--- have ∀ m, m ∈ A → n ≤ m, from sorry,
--- exists.intro n (and.intro ninA this)))
+-- theorem minimality {S : set ℕ} {a : ℕ} {H0 : S ≠ ∅} (H : a = least S H0): 
 
-theorem wf_of_le (S : set ℕ) (H : S ≠ ∅) : ∃₀ a ∈ S, ∀₀ b ∈ S, a ≤ b :=
-have ∃ x, x ∈ S, from exists_mem_of_ne_empty H,
-obtain n (Hn : n ∈ S), from this,
-alt_of_wf n Hn
-
-noncomputable definition chooseleast (S : set ℕ) (H : S ≠ ∅) : ℕ := 
-have ∃₀ a ∈ S, ∀₀ b ∈ S, a ≤ b, from wf_of_le S H,
-some this
-
-theorem least_is_mem (S : set ℕ) (H : S ≠ ∅) : chooseleast S H ∈ S := 
-have H1 : ∃₀ a ∈ S, ∀₀ b ∈ S, a ≤ b, from wf_of_le S H,
-have inS : some H1 ∈ S, from proof and.left (some_spec H1) qed,
-have chooseleast S H = some H1, from rfl,
-by+ rewrite -this at inS ; exact inS
-
-theorem minimality {S : set ℕ} {a : ℕ} {H0 : S ≠ ∅} (H : a = chooseleast S H0): 
-∀₀ x ∈ S, a ≤ x :=
-take b, assume Hb,
-have H1 : ∃₀ n ∈ S, ∀₀ m ∈ S, n ≤ m, from wf_of_le S H0,
-have chooseleast S H0 = some H1, from rfl,
-have eq : a = some H1, by+ rewrite this at H;exact H,
-have ∀₀ m ∈ S, some H1 ≤ m, from proof and.right (some_spec H1) qed, 
-have some H1 ≤ b, from this Hb,
-by+ simp 
+theorem minimality {S : set ℕ} {a : ℕ} {neq : S ≠ ∅}: ∀ x ∈ S, least S neq ≤ x := 
+λ x Hx, let ⟨bound, Ha⟩ := some_spec (wf_of_le S neq) in Ha x Hx
 
 end
 
