@@ -53,14 +53,14 @@ definition to_finset [decidable_eq A] (l : list A) : finset A :=
 --   end,
 -- quot.sound (eq.subst P !setoid.refl)
 
--- attribute [instance]
--- definition has_decidable_eq [decidable_eq A] : decidable_eq (finset A) :=
--- λ s₁ s₂, quot.rec_on_subsingleton₂ s₁ s₂
---   (λ l₁ l₂,
---      match perm.decidable_perm (l₁.1) (l₂.1) with
---      | decidable.is_true e := decidable.inl (quot.sound e)
---      | decidable.is_false n := decidable.inr (λ e : ⟦l₁⟧ = ⟦l₂⟧, absurd (quot.exact e) n)
---      end)
+attribute [instance]
+definition has_decidable_eq [decidable_eq A] : decidable_eq (finset A) :=
+λ s₁ s₂, quot.rec_on_subsingleton₂ s₁ s₂
+  (λ l₁ l₂,
+     match perm.decidable_perm (l₁.1) (l₂.1) with
+     | decidable.is_true e := decidable.is_true (quot.sound e)
+     | decidable.is_false n := decidable.is_false (λ e : ⟦l₁⟧ = ⟦l₂⟧, absurd (quot.exact e) n)
+     end)
 
 definition mem (a : A) (s : finset A) : Prop :=
 quot.lift_on s (λ l, a ∈ l.1)
@@ -80,7 +80,7 @@ theorem mem_list_of_mem {a : A} {l : nodup_list A} : a ∈ ⟦l⟧ → a ∈ l.1
 attribute [instance]
 definition decidable_mem [h : decidable_eq A] : ∀ (a : A) (s : finset A), decidable (a ∈ s) :=
 λ a s, quot.rec_on_subsingleton s
-  (λ l, match list.decidable_mem a (l.1) with
+  (λ l, match list.decidable_mem a l.1 with
         | decidable.is_true p := decidable.is_true (mem_of_mem_list p)
         | decidable.is_false n := decidable.is_false (λ p, absurd (mem_list_of_mem p) n)
 end)
@@ -144,7 +144,7 @@ include h
 
 definition insert (a : A) (s : finset A) : finset A :=
 quot.lift_on s
-  (λ l, to_finset_of_nodup (insert a (l.1)) (nodup_insert l.2)) -- implicit 'a'
+  (λ l, to_finset_of_nodup (insert a l.1) (nodup_insert l.2)) -- implicit 'a'
   (λ (l₁ l₂ : nodup_list A) (p : l₁ ~ l₂), quot.sound (perm.perm_insert a p))
 
 -- set builder notation
@@ -222,8 +222,6 @@ theorem card_insert_le (a : A) (s : finset A) :
 if H : a ∈ s then by rewrite [card_insert_of_mem H]; apply le_succ
 else by rewrite [card_insert_of_not_mem H]
 
-#check @quot.mk
-
 attribute [recursor 6]
 protected theorem induction {P : finset A → Prop}
     (H1 : P empty)
@@ -239,34 +237,33 @@ quot.induction_on s
       (take a l',
         assume IH nodup_al',
         have aux₁: a ∉ l', from not_mem_of_nodup_cons nodup_al',
-        have e : list.insert a l' = a :: l', from sorry,-- insert_eq_of_not_mem aux₁,
         have ndl' : nodup l', from nodup_of_nodup_cons nodup_al',
         have p1 : P (quot.mk _ (subtype.mk l' ndl')), from IH ndl',
         have ¬ mem a (quot.mk _ (subtype.mk l' ndl')), from aux₁,
         have P (insert a (quot.mk _ (subtype.mk l' _))), from H2 this p1,
+        have hperm : perm (list.insert a l') (a :: l'), from perm.perm_insert_cons_of_not_mem aux₁, 
         begin
-          revert nodup_al',
-          rewrite [-e],
-          intros,
-          apply this
-end)))
+          apply @eq.subst _ P _ _ _ this,
+          apply quot.sound,
+          exact hperm
+        end)))
 
--- theorem exists_mem_of_ne_empty {s : finset A} : s ≠ empty → ∃ a : A, a ∈ s :=
--- begin
---   induction s with a s nin ih,
---     {intro h, exact absurd rfl h},
---     {intro h, existsi a, apply mem_insert}
--- end
+protected theorem induction_on {P : finset A → Prop} (s : finset A)
+    (H1 : P empty)
+    (H2 : ∀ ⦃a : A⦄, ∀{s : finset A}, a ∉ s → P s → P (insert a s)) :
+  P s := finset.induction H1 H2 s
 
--- theorem eq_empty_of_card_eq_zero {s : finset A} (H : card s = 0) : s = ∅ :=
--- begin
---   induction s with a s' H1 IH,
---   { reflexivity },
---   { rewrite (card_insert_of_not_mem H1) at H, apply nat.no_confusion H}
--- end
+theorem exists_mem_of_ne_empty {s : finset A} : s ≠ empty → ∃ a : A, a ∈ s :=
+@finset.induction_on _ _ (λ x, x ≠ empty → ∃ a : A, mem a x) s 
+(λ h, absurd rfl h)
+(by intros a s nin ih h; existsi a; apply mem_insert)
+
+theorem eq_empty_of_card_eq_zero {s : finset A} : card s = 0 → s = empty :=
+@finset.induction_on _ _ (λ x, card x = 0 → x = empty) s 
+(λ h, rfl) 
+(by intros a s' H1 Ih H; rw (card_insert_of_not_mem H1) at H; contradiction)
 
 end insert
-
 
 /- erase -/
 section erase
@@ -528,7 +525,6 @@ quot.induction_on s (λ l, list.nil_subset l.1)
 theorem subset.refl (s : finset A) : s ⊆ s :=
 quot.induction_on s (λ l, list.subset.refl l.1)
 
-
 theorem subset.trans {s₁ s₂ s₃ : finset A} : s₁ ⊆ s₂ → s₂ ⊆ s₃ → s₁ ⊆ s₃ :=
 quot.induction_on₃ s₁ s₂ s₃ (λ l₁ l₂ l₃ h₁ h₂, list.subset.trans h₁ h₂)
 
@@ -567,7 +563,6 @@ begin
   intro H',
   show x ∈ t ∧ x ≠ a, from and.intro (mem_of_subset_of_mem H (and.left H')) (and.right H')
 end
-
 
 theorem erase_subset  (a : A) (s : finset A) : erase a s ⊆ s :=
 begin
@@ -654,8 +649,6 @@ begin
   apply ext, intro x,
   rw [mem_union_iff], repeat {rw mem_upto_iff}, simp [mem_singleton_iff, nat.le_iff_lt_or_eq, lt_succ_iff_le] 
 end
-
-#check @not_mem_empty
 
 /- useful rules for calculations with quantifiers -/
 theorem exists_mem_empty_iff {A : Type} (P : A → Prop) : (∃ x, mem x empty ∧ P x) ↔ false :=

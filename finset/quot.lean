@@ -1,3 +1,5 @@
+universe variables u v
+
 namespace quot
 
 section
@@ -39,8 +41,49 @@ quot.ind (λ a₁, quot.ind (λ a₂, H a₁ a₂) q₂) q₁
      : D q₁ q₂ q₃ :=
 quot.ind (λ a₁, quot.ind (λ a₂, quot.ind (λ a₃, H a₁ a₂ a₃) q₃) q₂) q₁
 
-
 end
 
+
+  section exact
+  variable {A : Type u}
+  variable [s : setoid A]
+  include s
+
+  private definition rel (q₁ q₂ : quotient s) : Prop :=
+  quot.lift_on₂ q₁ q₂
+    (λ a₁ a₂, a₁ ≈ a₂)
+    (λ a₁ a₂ b₁ b₂ a₁b₁ a₂b₂,
+      propext (iff.intro
+        (λ a₁a₂, setoid.trans (setoid.symm a₁b₁) (setoid.trans a₁a₂ a₂b₂))
+        (λ b₁b₂, setoid.trans a₁b₁ (setoid.trans b₁b₂ (setoid.symm a₂b₂)))))
+
+  local infix `~` := rel
+
+  private lemma rel.refl : ∀ q : quotient s, q ~ q :=
+  λ q, quot.induction_on q (λ a, setoid.refl a)
+
+  private lemma eq_imp_rel {q₁ q₂ : quotient s} : q₁ = q₂ → q₁ ~ q₂ :=
+  assume h, eq.rec_on h (rel.refl q₁)
+
+  theorem exact {a b : A} : ⟦a⟧ = ⟦b⟧ → a ≈ b :=
+  assume h, eq_imp_rel h
+
+  end exact
+
+
+  section
+  universe variables u_a u_b u_c
+  variables {A : Type u_a} {B : Type u_b}
+  variables [s₁ : setoid A] [s₂ : setoid B]
+  include s₁ s₂
+
+  attribute [reducible, elab_as_eliminator]
+  protected definition rec_on_subsingleton₂
+     {C : quotient s₁ → quotient s₂ → Type u_c} [H : ∀ a b, subsingleton (C ⟦a⟧ ⟦b⟧)]
+     (q₁ : quotient s₁) (q₂ : quotient s₂) (f : Π a b, C ⟦a⟧ ⟦b⟧) : C q₁ q₂:=
+  @quot.rec_on_subsingleton _ s₁.r (λ q, C q q₂) (λ a, quot.ind (λ b, H a b) q₂) q₁
+    (λ a, @quot.rec_on_subsingleton _ s₂.r _ (H a) q₂ (λ b, f a b))
+
+end
 
 end quot
