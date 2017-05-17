@@ -28,10 +28,10 @@ structure [class] quasiorder (A : Type) extends has_le A : Type :=
 (refl : ∀ a, le a a)
 (trans : ∀ {a b c}, le a b → le b c → le a c)
 
-proposition le_refl {A : Type} [quasiorder A] (a : A) : a ≤ a := 
+theorem le_refl {A : Type} [quasiorder A] (a : A) : a ≤ a := 
 quasiorder.refl a
 
-proposition le_trans {A : Type} [H : quasiorder A] {a b c : A} (H₁ : a ≤ b) (H₂ : b ≤ c) : a ≤ c := quasiorder.trans H₁ H₂
+theorem le_trans {A : Type} [H : quasiorder A] {a b c : A} (H₁ : a ≤ b) (H₂ : b ≤ c) : a ≤ c := quasiorder.trans H₁ H₂
  
 structure [class] wqo  (A : Type) extends quasiorder A : Type :=
 (is_good : ∀ f : ℕ → A,  ∃ i j : ℕ, i < j ∧ le (f i) (f j))

@@ -148,7 +148,7 @@ quot.lift_on s
   (λ (l₁ l₂ : nodup_list A) (p : l₁ ~ l₂), quot.sound (perm.perm_insert a p))
 
 -- set builder notation
-notation [priority finset.prio] `'{`:max a:(foldr `, ` (x b, insert x b) ∅) `}`:0 := a
+-- notation [priority finset.prio] `'{`:max a:(foldr `, ` (x b, insert x b) ∅) `}`:0 := a
 
 theorem mem_insert (a : A) (s : finset A) : a ∈ insert a s :=
 quot.induction_on s
