@@ -1,8 +1,10 @@
-structure quasiorder (A : Type) extends has_le A :=
+universe u
+
+structure quasiorder (A : Type u) extends has_le A :=
 (refl : ∀ a, le a a)
 (trans : ∀ {a b c}, le a b → le b c → le a c)
 
-structure wqo (A : Type) extends quasiorder A :=
+structure wqo (A : Type u) extends quasiorder A :=
 (is_good : ∀ f : ℕ → A, ∃ i j : ℕ, i < j ∧ le (f i) (f j))
 
 -- the following works but the above does no.t

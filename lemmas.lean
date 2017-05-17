@@ -8,13 +8,13 @@ parameter {X : Type}
 
 -- theorem ext {a b : set X} (H : ∀x, x ∈ a ↔ x ∈ b) : a = b := funext (λ x, propext (H x))
 
-theorem not_mem_empty (x : X) : ¬ (x ∈ (∅ : set X)) := λ H, H
+-- theorem not_mem_empty (x : X) : ¬ (x ∈ (∅ : set X)) := λ H, H
 
-theorem eq_empty_of_forall_not_mem {s : set X} (H : ∀ x, x ∉ s) : s = ∅ :=
-set.ext (λ x, iff.intro (λ xs, absurd xs (H x)) (λ xe, absurd xe (not_mem_empty _)))
+-- theorem eq_empty_of_forall_not_mem {s : set X} (H : ∀ x, x ∉ s) : s = ∅ :=
+-- set.ext (λ x, iff.intro (λ xs, absurd xs (H x)) (λ xe, absurd xe (set.not_mem_empty _)))
 
-theorem exists_mem_of_ne_empty {s : set X} (H : s ≠ ∅) : ∃ x, x ∈ s :=
-by_contradiction (λ H', H (eq_empty_of_forall_not_mem (forall_not_of_not_exists H')))
+-- theorem exists_mem_of_ne_empty {s : set X} (H : s ≠ ∅) : ∃ x, x ∈ s :=
+-- by_contradiction (λ H', H (eq_empty_of_forall_not_mem (forall_not_of_not_exists H')))
 
 end
 
@@ -50,7 +50,7 @@ noncomputable definition least (S : set ℕ) (H : S ≠ ∅) : ℕ := some (wf_o
 theorem least_is_mem (S : set ℕ) (H : S ≠ ∅) : least S H ∈ S := 
 let ⟨bound, Ha⟩ := some_spec (wf_of_le S H) in bound
 
-theorem minimality {S : set ℕ} {a : ℕ} {neq : S ≠ ∅}: ∀ x, x ∈ S → least S neq ≤ x := 
+theorem minimality {S : set ℕ} (neq : S ≠ ∅): ∀ x, x ∈ S → least S neq ≤ x := 
 λ x Hx, let ⟨bound, Ha⟩ := some_spec (wf_of_le S neq) in Ha x Hx
 
 end
