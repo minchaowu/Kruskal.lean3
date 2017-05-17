@@ -391,390 +391,336 @@ Hg this)
       have is_good g o, from exists.intro (i - h 0) (exists.intro (j - h 0) (and.intro this Hr2)),
      show _, from Hg this)))
 
--- assume good : is_good combined_seq o,
--- let ⟨i,j,hw⟩ := good in
--- --obtain (i j) hw, from good,
--- by_cases
--- (suppose (h 0) = 0,
---  have combined_seq = g, from funext (g_part_of_combined_seq this),
---  have is_good g o, from sorry,-- by rewrite this at good;exact good,
---  Hg this)
--- (assume ne, 
---   by_cases
---   (assume Hposi : i ≤ pred (h 0), 
---    have eq1i : combined_seq i = f i, from if_pos (and.intro ne Hposi),
---    by_cases
---    (suppose j ≤ pred (h 0), 
---     have eq1j : combined_seq j = f j, from if_pos (and.intro ne this), 
---     have o (combined_seq i) (combined_seq j), from and.right hw,
---     have o (combined_seq i) (f j), from sorry,-- by rewrite eq1j at this; exact this,
---     have o (f i) (f j), from sorry,--by simp,
---     have is_good f o, from exists.intro i (exists.intro j (and.intro (and.left hw) this)),
---     Hf this)
---    (suppose ¬ j ≤ pred (h 0), 
---     have ¬ ((h 0) ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
---     have eq2j : combined_seq j = g (j - (h 0)), from if_neg this, 
---     have o (f i) (g (j - (h 0))), from sorry, --by simp,
---     have Hr : o (f i) (f (h (j - (h 0)))), from sorry, --H this,
---     have i < h (j - (h 0)), from
---       have ilth0 : i < h 0, from lt_of_le_of_lt Hposi (lt_pred_nonzero_self ne),
---       have h 0 ≤ h (j - h 0), from Hh (j - h 0),
---       lt_of_lt_of_le ilth0 this,
---     have is_good f o, from exists.intro i (exists.intro (h (j - h 0)) (and.intro this Hr)),
---     Hf this))
---   (assume Hnegi : ¬ i ≤ pred (h 0), 
---    have iht : pred (h 0) < i, from lt_of_not_ge Hnegi,
---    have ¬ (h 0 ≠ 0 ∧ i ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegi,
---    have eq2i : combined_seq i = g (i - h 0), from if_neg this,
---    by_cases
---    (assume Hposj : j ≤ pred (h 0), 
---     have j < i, from lt_of_le_of_lt Hposj iht,
---     (not_lt_of_gt (and.left hw)) this)
---     (assume Hnegj : ¬ j ≤ pred (h 0), 
---      have pred (h 0) < j, from lt_of_not_ge Hnegj,
---      have ¬ (h 0 ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegj,
---      have eq2j : combined_seq j = g (j - h 0), from if_neg this,
---      have o (combined_seq i) (combined_seq j), from and.right hw,
---      have o (combined_seq i) (g (j - h 0)), from sorry, --by simp,
---      have Hr2 : o (g (i - h 0)) (g (j - h 0)), from sorry,-- by simp,
---      have ige : h 0 ≤ i, from gt_of_gt_pred iht,
---      have jgt : h 0 < j, from lt_of_le_of_lt ige (and.left hw),
---      have i - h 0 < j - h 0, from 
---      or.elim (lt_or_eq_of_le ige)
---      (assume hl, sub_gt_of_gt (and.left hw) hl)
---      (assume hr, have 0 < j - h 0, from nat.sub_pos_of_lt jgt, sorry--by simp
--- ),
---      have is_good g o, from exists.intro (i - h 0) (exists.intro (j - h 0) (and.intro this Hr2)),
---      Hg this)))
+end
+
+section
+-- further assume that f is a minimal bad sequence and card (g 0) < card (f (h 0)) 
+-- In other words, this section says, assuming that there is a bad sequence of Q, if g is a bad sequence such that H holds, then there is a contradiction. 
+parameter {Q :Type}
+parameter {o : Q → Q → Prop}
+parameters {g : ℕ → Q}
+parameter h : ℕ → ℕ
+parameter m : Q → ℕ -- a measure of cardinality
+parameter Hh : ∀ i, h 0 ≤ h i
+parameter Hex : ∃ f, ¬ is_good f o
+parameter Hg : ¬ is_good g o
+parameter H : ∀ i j, o (minimal_bad_seq m Hex i) (g (j - h 0)) → o (minimal_bad_seq m Hex i) ((minimal_bad_seq m Hex) (h (j - h 0)))
+parameter Hbp : m (g 0) < m (minimal_bad_seq m Hex (h 0))
+
+definition comb_seq_with_mbs := combined_seq (minimal_bad_seq m Hex) g h
+
+theorem g_part_of_comb_seq_with_mbs (H1 : (h 0) = 0) : ∀ x, comb_seq_with_mbs x = g x := 
+begin apply g_part_of_combined_seq, assumption end
+
+theorem badness_of_comb_seq_with_mbs : ¬ is_good comb_seq_with_mbs o := 
+badness_of_combined_seq (minimal_bad_seq m Hex) g h Hh (badness_of_mbs m Hex) Hg H
+
+theorem comb_seq_extends_mbs_at_pred_bp (H : h 0 ≠ 0): extends_at (pred (h 0)) (minimal_bad_seq m Hex) comb_seq_with_mbs := λ m, λ Hm, if_pos (and.intro H Hm)
+
+lemma comb_seq_h0 : comb_seq_with_mbs (h 0) = g 0 := 
+by_cases
+(suppose h 0 = 0, 
+have comb_seq_with_mbs (h 0) = g (h 0), from g_part_of_comb_seq_with_mbs this (h 0),
+by super)
+(suppose h 0 ≠ 0, 
+have pred (h 0) < h 0, from lt_pred_nonzero_self this,
+have ¬ h 0 ≤ pred (h 0), from not_le_of_gt this,
+have ¬ ((h 0) ≠ 0 ∧ h 0 ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
+have comb_seq_with_mbs (h 0) = g (h 0 - h 0), from if_neg this,
+by simp [this,nat.sub_self])
+
+include Hbp Hex
+
+theorem local_contra_of_comb_seq_with_mbs : false := 
+by_cases
+(suppose eq0 : h 0 = 0, 
+have eq : comb_seq_with_mbs 0 = g 0, begin apply g_part_of_comb_seq_with_mbs, assumption end,
+have m (comb_seq_with_mbs 0) < m (minimal_bad_seq m Hex (h 0)), by rewrite -eq at Hbp;exact Hbp,
+have le : m (comb_seq_with_mbs 0) < m (minimal_bad_seq m Hex 0), by super,
+have m (minimal_bad_seq m Hex 0) ≤ m (comb_seq_with_mbs 0), from minimality_of_mbs_0 m Hex comb_seq_with_mbs badness_of_comb_seq_with_mbs,
+(not_le_of_gt le) this)
+(assume Hneg, 
+-- have le : m (minimal_bad_seq m Hex (succ (pred (h 0)))) ≤  m (comb_seq_with_mbs (succ (pred (h 0)))), begin apply minimality_of_mbs, split, end,
+have le : m (minimal_bad_seq m Hex (succ (pred (h 0)))) ≤  m (comb_seq_with_mbs (succ (pred (h 0)))), from minimality_of_mbs m _ _ _ ⟨begin apply comb_seq_extends_mbs_at_pred_bp, exact Hneg end,badness_of_comb_seq_with_mbs⟩,
+have h 0 > 0, from nat.pos_of_ne_zero Hneg,
+have succ (pred (h 0)) = h 0, from succ_pred_of_pos this,
+have m (minimal_bad_seq m Hex (h 0)) ≤ m (comb_seq_with_mbs (h 0)), by rewrite this at le;exact le,
+have m (minimal_bad_seq m Hex (h 0)) ≤ m (g 0), by rewrite comb_seq_h0 at this;exact this,
+have ¬ m (g 0) < m (minimal_bad_seq m Hex (h 0)), from not_lt_of_ge this, 
+this Hbp)
 
 end
 
--- section
--- -- further assume that f is a minimal bad sequence and card (g 0) < card (f (h 0)) 
--- -- In other words, this section says, assuming that there is a bad sequence of Q, if g is a bad sequence such that H holds, then there is a contradiction. 
--- parameter {Q :Type}
--- parameter {o : Q → Q → Prop}
--- parameters {g : ℕ → Q}
--- parameter h : ℕ → ℕ
--- parameter m : Q → ℕ -- a measure of cardinality
--- parameter Hh : ∀ i, h 0 ≤ h i
--- parameter Hex : ∃ f, ¬ is_good f o
--- parameter Hg : ¬ is_good g o
--- parameter H : ∀ i j, o (minimal_bad_seq m Hex i) (g (j - h 0)) → o (minimal_bad_seq m Hex i) ((minimal_bad_seq m Hex) (h (j - h 0)))
--- parameter Hbp : m (g 0) < m (minimal_bad_seq m Hex (h 0))
-
--- definition comb_seq_with_mbs := combined_seq (minimal_bad_seq m Hex) g h
-
--- theorem g_part_of_comb_seq_with_mbs (H1 : (h 0) = 0) : ∀ x, comb_seq_with_mbs x = g x := 
--- g_part_of_combined_seq (minimal_bad_seq m Hex) g h H1
-
--- theorem badness_of_comb_seq_with_mbs : ¬ is_good comb_seq_with_mbs o := 
--- badness_of_combined_seq (minimal_bad_seq m Hex) g h Hh (badness_of_mbs m Hex) Hg H
-
--- theorem comb_seq_extends_mbs_at_pred_bp (H : h 0 ≠ 0): extends_at (pred (h 0)) (minimal_bad_seq m Hex) comb_seq_with_mbs := λ m, λ Hm, if_pos (and.intro H Hm)
-
--- lemma comb_seq_h0 : comb_seq_with_mbs (h 0) = g 0 := 
--- by_cases
--- (suppose h 0 = 0, 
--- have comb_seq_with_mbs (h 0) = g (h 0), from g_part_of_comb_seq_with_mbs this (h 0),
--- by+ simp)
--- (suppose h 0 ≠ 0, 
--- have pred (h 0) < h 0, from lt_pred_nonzero_self this,
--- have ¬ h 0 ≤ pred (h 0), from not_le_of_gt this,
--- have ¬ ((h 0) ≠ 0 ∧ h 0 ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
--- have comb_seq_with_mbs (h 0) = g (h 0 - h 0), from if_neg this,
--- by+ simp)
-
--- theorem local_contra_of_comb_seq_with_mbs : false := 
--- by_cases
--- (suppose h 0 = 0, 
--- have eq : comb_seq_with_mbs 0 = g 0, from g_part_of_comb_seq_with_mbs this 0,
--- have m (comb_seq_with_mbs 0) < m (minimal_bad_seq m Hex (h 0)), by+ rewrite -eq at Hbp;exact Hbp,
--- have le : m (comb_seq_with_mbs 0) < m (minimal_bad_seq m Hex 0), by+ simp,
--- have m (minimal_bad_seq m Hex 0) ≤ m (comb_seq_with_mbs 0), from minimality_of_mbs_0 m Hex comb_seq_with_mbs badness_of_comb_seq_with_mbs,
--- (not_le_of_gt le) this)
--- (assume Hneg, 
--- have le : m (minimal_bad_seq m Hex (succ (pred (h 0)))) ≤  m (comb_seq_with_mbs (succ (pred (h 0)))), from minimality_of_mbs m Hex (pred (h 0)) comb_seq_with_mbs (and.intro (comb_seq_extends_mbs_at_pred_bp Hneg) badness_of_comb_seq_with_mbs),
--- have h 0 > 0, from pos_of_ne_zero Hneg,
--- have succ (pred (h 0)) = h 0, from succ_pred_of_pos this,
--- have m (minimal_bad_seq m Hex (h 0)) ≤ m (comb_seq_with_mbs (h 0)), by+ rewrite this at le;exact le,
--- have m (minimal_bad_seq m Hex (h 0)) ≤ m (g 0), by+ rewrite comb_seq_h0 at this;exact this,
--- have ¬ m (g 0) < m (minimal_bad_seq m Hex (h 0)), from not_lt_of_ge this, 
--- this Hbp)
-
--- end
-
--- check local_contra_of_comb_seq_with_mbs
-
--- section
--- parameter {Q : Type}
--- parameter [wqo Q]
-
--- definition ofs := @order_on_finite_subsets Q wqo.le
-
--- theorem ofs_refl (q : finite_subsets Q) : ofs q q :=
--- have ∀ a : Q, a ∈ elt_of q → wqo.le a (id a) ∧ id a ∈ elt_of q, by intros;split;apply wqo.refl;simp,
--- exists.intro id (and.intro (inj_from_to_id (elt_of q)) this)
-
--- theorem ofs_trans (a b c : finite_subsets Q) (H1 : ofs a b) (H2 : ofs b c) : ofs a c :=
--- obtain f hf, from H1,
--- obtain g hg, from H2,
--- have inj : inj_from_to (g ∘ f) (elt_of a) (elt_of c), from inj_from_to_compose (and.left hg) (and.left hf),
--- have ∀ q : Q, q ∈ elt_of a → wqo.le q ((g ∘ f) q) ∧ (g ∘ f) q ∈ elt_of c, from 
---   take q, assume Hq,
---   have le1 : wqo.le q (f q), from and.left ((and.right hf) q Hq),
---   have fqin : f q ∈ elt_of b, from and.right ((and.right hf) q Hq),
---   have le2 : wqo.le (f q) ((g ∘ f) q), from and.left ((and.right hg) (f q) fqin),
---   have qle : wqo.le q ((g ∘ f) q), from !wqo.trans le1 le2,
---   have (g ∘ f) q ∈ elt_of c, from and.right ((and.right hg) (f q) fqin),
---   and.intro qle this,
--- exists.intro (g ∘ f) (and.intro inj this)
-
--- parameter H : ∃ f : ℕ → finite_subsets Q, ¬ is_good f ofs
-
--- definition card_of_finite_subsets {A : Type} (s : finite_subsets A) := card (elt_of s)
-
--- definition Higman's_mbs (n : ℕ) : finite_subsets Q := minimal_bad_seq card_of_finite_subsets H n
-
--- theorem badness_of_Higman's_mbs : ¬ is_good Higman's_mbs ofs := badness_of_mbs card_of_finite_subsets H
-
--- theorem nonempty_mem_of_mbs (n : ℕ) : elt_of (Higman's_mbs n) ≠ ∅ := 
--- suppose elt_of (Higman's_mbs n) = ∅, 
--- have lt : n < succ n, from lt_succ_self n,
--- have nondescending : ∀ a : Q, a ∈ elt_of (Higman's_mbs n) → wqo.le a (id a) ∧ id a ∈ elt_of (Higman's_mbs (succ n)), from 
---   λ a, λ H, have a ∉ ∅, from not_mem_empty a, by+ simp,
--- have ofs (Higman's_mbs n) (Higman's_mbs (succ n)), 
--- begin+ fapply exists.intro,exact id,repeat split,
---   intros a Ha,apply and.right (nondescending a Ha),
---   intros,simp,apply nondescending end,
--- have is_good Higman's_mbs ofs, from exists.intro n (exists.intro (succ n) (and.intro lt this)),
--- badness_of_Higman's_mbs this
-
--- definition B_pairs (n : ℕ) : Q × finite_subsets Q := 
--- have ∃ a : Q, a ∈ elt_of (Higman's_mbs n), from exists_mem_of_ne_empty (nonempty_mem_of_mbs n),
--- let q := some this in
--- let b := elt_of (Higman's_mbs n) \ '{q} in
--- have finite (elt_of (Higman's_mbs n)), from has_property (Higman's_mbs n),
--- have finite b, from proof @finite_diff _ _ _ this qed,
--- (q, tag b this)
+-- #check local_contra_of_comb_seq_with_mbs
+
+section
+parameter {Q : Type}
+parameter [o : wqo Q]
+
+definition ofs := @order_on_finite_subsets Q o.le
+
+theorem ofs_refl (q : finite_subsets Q) : ofs q q :=
+have ∀ a : Q, a ∈ q.1 → a ≤ (id a) ∧ id a ∈ q.1, begin intros, split, simp, apply quasiorder.refl, simp, assumption end,
+exists.intro id (and.intro (inj_from_to_id q.1) this)
+
+theorem ofs_trans (a b c : finite_subsets Q) (H1 : ofs a b) (H2 : ofs b c) : ofs a c :=
+let ⟨f,hf⟩ := H1 in
+let ⟨g,hg⟩ := H2 in
+have inj : inj_from_to (g ∘ f) a.1 c.1, from inj_from_to_compose (and.left hg) (and.left hf),
+have ∀ q : Q, q ∈ a.1 → q ≤ ((g ∘ f) q) ∧ (g ∘ f) q ∈ c.1, from 
+  take q, assume Hq,
+  have le1 : q ≤ (f q), from and.left ((and.right hf) q Hq),
+  have fqin : f q ∈ b.1, from and.right ((and.right hf) q Hq),
+  have le2 : (f q) ≤ ((g ∘ f) q), from and.left ((and.right hg) (f q) fqin),
+  have qle : q ≤ ((g ∘ f) q), from quasiorder.trans le1 le2,
+  have (g ∘ f) q ∈ c.1, from and.right ((and.right hg) (f q) fqin),
+  and.intro qle this,
+exists.intro (g ∘ f) (and.intro inj this)
+
+parameter H : ∃ f : ℕ → finite_subsets Q, ¬ is_good f ofs
+
+definition card_of_finite_subsets {A : Type} (s : finite_subsets A) := card s.1
+
+definition Higman's_mbs (n : ℕ) : finite_subsets Q := minimal_bad_seq card_of_finite_subsets H n
+
+theorem badness_of_Higman's_mbs : ¬ is_good Higman's_mbs ofs := badness_of_mbs card_of_finite_subsets H
+
+theorem nonempty_mem_of_mbs (n : ℕ) : (Higman's_mbs n).1 ≠ ∅ := 
+suppose (Higman's_mbs n).1 = ∅, 
+have lt : n < succ n, from lt_succ_self n,
+have nondescending : ∀ a : Q, a ∈ (Higman's_mbs n).1 → a ≤ (id a) ∧ id a ∈ (Higman's_mbs (succ n)).1, from 
+  λ a, λ H, have a ∉ (∅ : set Q), from set.not_mem_empty a, by super,
+have ofs (Higman's_mbs n) (Higman's_mbs (succ n)), 
+from ⟨id, ⟨⟨λ a Ha,((nondescending a Ha)^.right),λ b Hb h1 h2 h3,by assumption⟩,nondescending⟩⟩,
+have is_good Higman's_mbs ofs, from exists.intro n (exists.intro (succ n) (and.intro lt this)),
+badness_of_Higman's_mbs this
 
--- private definition B (n : ℕ) : finite_subsets Q := pr2 (B_pairs n)
+definition B_pairs (n : ℕ) : Q × finite_subsets Q := 
+have ∃ a : Q, a ∈ (Higman's_mbs n).1, from exists_mem_of_ne_empty (nonempty_mem_of_mbs n),
+let q := some this in
+let b := (Higman's_mbs n).1 \ insert q ∅ in
+have finite (Higman's_mbs n).1, from (Higman's_mbs n).2,
+have finite b, from @finite_diff _ _ _ this,
+(q, ⟨b,this⟩)
 
--- definition qn (n : ℕ) : Q := pr1 (B_pairs n)
+private definition B (n : ℕ) : finite_subsets Q := (B_pairs n).2
+
+definition qn (n : ℕ) : Q := (B_pairs n).1
 
--- theorem qn_in_mbs (n : ℕ) : qn n ∈ elt_of (Higman's_mbs n) :=
--- some_spec (exists_mem_of_ne_empty (nonempty_mem_of_mbs n))
+theorem qn_in_mbs (n : ℕ) : qn n ∈ (Higman's_mbs n).val :=
+some_spec (exists_mem_of_ne_empty (nonempty_mem_of_mbs n))
 
--- theorem qn_not_in_Bn (n : ℕ) : qn n ∉ elt_of (B n) := 
--- suppose qn n ∈ elt_of (B n), (and.right this) (mem_singleton (qn n))
+theorem qn_not_in_Bn (n : ℕ) : ¬ set.mem (qn n) (B n).val := 
+suppose qn n ∈ (B n).val, (and.right this) (mem_singleton (qn n))
+
+theorem ins_B_pairs (n : ℕ) : insert (qn n) (B n).val = (Higman's_mbs n).val :=
+have ∃ a : Q, a ∈ (Higman's_mbs n).val, from exists_mem_of_ne_empty (nonempty_mem_of_mbs n),
+have qnin : qn n ∈ (Higman's_mbs n).val, from some_spec this,
+have (B n).val = (Higman's_mbs n).val \ insert (qn n) ∅, from rfl,
+begin apply subset.antisymm, intros x H1, apply or.elim H1,  
+intro h, simph, intro h1, rw this at h1, exact h1^.left,
+intros x h2, cases (decidable.em (x = qn H n)) with H3 H4,
+apply or.inl,exact H3,
+apply or.inr, rw this,apply and.intro, exact h2,
+apply not_mem_singleton, exact H4
+end
 
--- theorem ins_B_pairs (n : ℕ) : insert (qn n) (elt_of (B n)) = elt_of (Higman's_mbs n) :=
--- have ∃ a : Q, a ∈ elt_of (Higman's_mbs n), from exists_mem_of_ne_empty (nonempty_mem_of_mbs n),
--- have qnin : qn n ∈ elt_of (Higman's_mbs n), from some_spec this,
--- have elt_of (B n) = elt_of (Higman's_mbs n) \ '{qn n}, from rfl,
--- begin+ apply subset.antisymm, intros x H1, apply or.elim H1, 
---   intro, simp, intro, have x ∈ elt_of (Higman's_mbs n) \ '{qn n}, by simp, 
---   apply and.left this,
---   intros x H2, cases (decidable.em (x = qn n)) with [H3, H4],
---   apply or.inl, exact H3,
---   apply or.inr, rewrite this, apply and.intro, exact H2,
---   apply not_mem_singleton, exact H4 end
+theorem sub_B_mbs (n : ℕ) : (B n).val ⊆ (Higman's_mbs n).val :=
+by intros; intro; rewrite -ins_B_pairs; apply or.inr; assumption
 
--- theorem sub_B_mbs (n : ℕ) : elt_of (B n) ⊆ elt_of (Higman's_mbs n) :=
--- by intros; intro; rewrite -ins_B_pairs; apply or.inr; assumption
+theorem trans_of_B (i j : ℕ) (H1 : ofs (Higman's_mbs i) (B j)) : ofs (Higman's_mbs i) (Higman's_mbs j) :=
+let ⟨f,hf⟩ := H1 in
+have inj_from_to f (Higman's_mbs i).val (B j).val, from and.left hf,
+have Hl : ∀ a, a ∈ (Higman's_mbs i).val → f a ∈ (Higman's_mbs j).val, from
+  take a, assume Ha, have f a ∈ (B j).val, from and.left this Ha, 
+  (sub_B_mbs j) this,
+have inj : inj_from_to f (Higman's_mbs i).val (Higman's_mbs j).val, from and.intro Hl (and.right (and.left hf)),
+have non_descending (Higman's_mbs i) (Higman's_mbs j) o.le f, from 
+  take a, assume Ha, have Hl : a ≤ (f a), from and.left ((and.right hf) a Ha),
+  have f a ∈ (B j).val, from and.right ((and.right hf) a Ha),
+  have fain : f a ∈ insert (qn j) (B j).val, from or.intro_right (f a = qn j) this,
+  have insert (qn j) (B j).val =  (Higman's_mbs j).val, from ins_B_pairs j,
+  have f a ∈ (Higman's_mbs j).val, by rewrite this at fain;exact fain,
+  and.intro Hl this,
+exists.intro f (and.intro inj this)
 
--- theorem trans_of_B (i j : ℕ) (H1 : ofs (Higman's_mbs i) (B j)) : ofs (Higman's_mbs i) (Higman's_mbs j) :=
--- obtain f hf, from H1,
--- have inj_from_to f (elt_of (Higman's_mbs i)) (elt_of (B j)), from and.left hf,
--- have Hl : ∀ a, a ∈ elt_of (Higman's_mbs i) → f a ∈ elt_of (Higman's_mbs j), from
---   take a, assume Ha, have f a ∈ elt_of (B j), from and.left this a Ha, 
---   (sub_B_mbs j) this,
--- have inj : inj_from_to f (elt_of (Higman's_mbs i)) (elt_of (Higman's_mbs j)), from and.intro Hl (and.right (and.left hf)),
--- have non_descending (Higman's_mbs i) (Higman's_mbs j) wqo.le f, from 
---   take a, assume Ha, have Hl : wqo.le a (f a), from and.left ((and.right hf) a Ha),
---   have f a ∈ elt_of (B j), from and.right ((and.right hf) a Ha),
---   have fain : f a ∈ insert (qn j) (elt_of (B j)), from or.intro_right (f a = qn j) this,
---   have insert (qn j) (elt_of (B j)) = elt_of (Higman's_mbs j), from ins_B_pairs j,
---   have f a ∈ elt_of (Higman's_mbs j), by+ rewrite this at fain;exact fain,
---   and.intro Hl this,
--- exists.intro f (and.intro inj this)
+section
+parameter Hg : ∃ g : ℕ → ℕ, ¬ is_good (B ∘ g) ofs ∧ ∀ i : ℕ, g 0 ≤ g i
 
--- section
--- parameter Hg : ∃ g : ℕ → ℕ, ¬ is_good (B ∘ g) ofs ∧ ∀ i : ℕ, g 0 ≤ g i
+private definition g := some Hg
 
--- private definition g := some Hg
+theorem Higman's_Hg : ¬ is_good (B ∘ g) ofs := 
+let ⟨l,r⟩ := some_spec Hg in l
 
--- theorem Higman's_Hg : ¬ is_good (B ∘ g) ofs := and.left (some_spec Hg)
+theorem Higman's_Hex : ∃ f, ¬ is_good f ofs := exists.intro (B ∘ g) Higman's_Hg
 
--- theorem Higman's_Hex : ∃ f, ¬ is_good f ofs := exists.intro (B ∘ g) Higman's_Hg
+theorem Higman's_Hh : ∀ i : ℕ, g 0 ≤ g i := and.right (some_spec Hg)
 
--- theorem Higman's_Hh : ∀ i : ℕ, g 0 ≤ g i := and.right (some_spec Hg)
+theorem Higman's_H : ∀ i j, ofs (Higman's_mbs i) ((B ∘ g) (j - g 0)) → ofs (Higman's_mbs i) (Higman's_mbs (g (j - g 0))) := λ i j, λ H1, trans_of_B i (g (j - g 0)) H1
 
--- theorem Higman's_H : ∀ i j, ofs (Higman's_mbs i) ((B ∘ g) (j - g 0)) → ofs (Higman's_mbs i) (Higman's_mbs (g (j - g 0))) := λ i j, λ H1, trans_of_B i (g (j - g 0)) H1
+definition Higman's_comb_seq (n : ℕ) : finite_subsets Q := 
+@comb_seq_with_mbs _ ofs (B ∘ g) g card_of_finite_subsets Higman's_Hex n
 
--- definition Higman's_comb_seq (n : ℕ) : finite_subsets Q := @comb_seq_with_mbs _ ofs (B ∘ g) g card_of_finite_subsets Higman's_Hex n
+theorem card_B_lt_mbs (n : ℕ) : card (B n).val < card (Higman's_mbs n).val :=
+have finite (B n).val, from (B n).2,
+have eq : card (insert (qn n) (B n).val) = card (B n).val + 1, from @card_insert_of_not_mem _ _ _ this (qn_not_in_Bn n), 
+have card (B n).val < card (B n).val + 1, from lt_succ_self (card (B n).val), 
+have card (B n).val < card (insert (qn n) (B n).1), begin rw eq, exact this end,-- by simp,
+have insert (qn n) ((B n).val) = (Higman's_mbs n).val, from ins_B_pairs n,
+by super
 
--- theorem card_B_lt_mbs (n : ℕ) : card (elt_of (B n)) < card (elt_of (Higman's_mbs n)) :=
--- have finite (elt_of (B n)), from has_property (B n),
--- have card (insert (qn n) (elt_of (B n))) = card (elt_of (B n)) + 1, from @card_insert_of_not_mem _ _ _ this (qn_not_in_Bn n), 
--- have card (elt_of (B n)) < card (elt_of (B n)) + 1, from lt_succ_self (card (elt_of (B n))), 
--- have card (elt_of (B n)) < card (insert (qn n) (elt_of (B n))), by+ simp,
--- have insert (qn n) (elt_of (B n)) = elt_of (Higman's_mbs n), from ins_B_pairs n,
--- by+ simp
+theorem Higman's_Hbp : card_of_finite_subsets (B (g 0)) < card_of_finite_subsets (Higman's_mbs (g 0)) := card_B_lt_mbs (g 0)
 
--- theorem Higman's_Hbp : card_of_finite_subsets (B (g 0)) < card_of_finite_subsets (Higman's_mbs (g 0)) := card_B_lt_mbs (g 0)
+theorem Higman's_local_contradition : false := 
+local_contra_of_comb_seq_with_mbs g card_of_finite_subsets Higman's_Hh Higman's_Hex Higman's_Hg Higman's_H Higman's_Hbp
 
--- theorem Higman's_local_contradition : false := 
--- local_contra_of_comb_seq_with_mbs g card_of_finite_subsets Higman's_Hh Higman's_Hex Higman's_Hg Higman's_H Higman's_Hbp
-
--- end
-
--- check Higman's_local_contradition
-
--- definition ClassB : Type := {x : finite_subsets Q | ∃ i, B i = x}
-
--- definition oB (b1 : ClassB) (b2 : ClassB) : Prop := ofs (elt_of b1) (elt_of b2)
-
--- theorem oB_refl (q : ClassB) : oB q q := ofs_refl (elt_of q)
-
--- theorem oB_trans (a b c : ClassB) (H1 : oB a b) (H2 : oB b c) : oB a c :=
--- !ofs_trans H1 H2
-
---     section
---     -- Suppose there exists a bad sequence of objects in ClassB. We show that we can construct a g : ℕ → ℕ such that ¬ is_good (B ∘ g) o. Then we can apply 'exists_sub_bad'. We cannot directly apply this theorem because ClassB is a type distinct from finite_subsets Q.
---     parameter HfB : ∃ f, ¬ is_good f oB
-
---     private definition f' : ℕ → ClassB := some HfB
-
---     private theorem bad_f' : ¬ is_good f' oB := some_spec HfB
-
---     private definition g' (n : ℕ) := elt_of (f' n)
-
---     theorem exists_bad_B_seq : ¬ is_good g' ofs :=
---     suppose is_good g' ofs,
---     obtain (i j) hg', from this,
---     have ofs (elt_of (f' i)) (elt_of (f' j)), from and.right hg',
---     have is_good f' oB, from exists.intro i (exists.intro j (and.intro (and.left hg') this)),
---     bad_f' this
-
---     private definition g (n : ℕ) : ℕ := 
---     have ∃ i, B i = g' n, from has_property (f' n),
---     some this
-
---     private theorem comp_eq_g' : B ∘ g = g' :=
---     have ∀ x, B (g x) = g' x, from take x, some_spec (has_property (f' x)),
---     funext this
-
---     private theorem bad_comp : ¬ is_good (B ∘ g) ofs := 
---     have ¬ is_good g' ofs, from exists_bad_B_seq,
---     by+ rewrite -comp_eq_g' at this;exact this
-
---     theorem exists_sub_bad_B_seq : ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) ofs ∧ ∀ i : ℕ, h 0 ≤ h i := exists_sub_bad B g ofs bad_comp
-
---     end
-
--- theorem oB_is_good : ∀ f, is_good f oB :=
--- by_contradiction
--- (suppose ¬ ∀ f, is_good f oB,
--- have ∃ f, ¬ is_good f oB, from exists_not_of_not_forall this,
--- have ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) ofs ∧ ∀ i : ℕ, h 0 ≤ h i, from exists_sub_bad_B_seq this,
--- Higman's_local_contradition this)
-
--- definition wqo_ClassB [instance] : wqo ClassB := wqo.mk oB oB_refl oB_trans oB_is_good
-
--- definition wqo_prod_Q_ClassB [instance] : wqo (Q × ClassB) := wqo_prod
-
--- theorem good_prod_Q_ClassB : ∀ f : ℕ → Q × ClassB, is_good f (o_for_pairs wqo.le oB) := wqo.is_good
-
--- lemma B_refl (n : ℕ) : ∃ i, B i = B n := exists.intro n rfl
-
--- definition fB (n : ℕ) : ClassB := tag (B n) (B_refl n)
-
--- private definition p (n : ℕ) : Q × ClassB := (qn n, fB n)
-
--- theorem good_p : is_good p (o_for_pairs wqo.le oB) := good_prod_Q_ClassB p
-
--- theorem Hij : ∃ i j, i < j ∧ (wqo.le (qn i) (qn j) ∧ oB (fB i) (fB j)) := good_p
-
--- theorem exists_embeds : ∃ i j, i < j ∧ ofs (Higman's_mbs i) (Higman's_mbs j) :=
--- obtain (i j) hij, from good_p,
--- have oB (fB i) (fB j), from and.right (and.right hij),
--- obtain f₁ hf1, from this,
--- have injf₁ : inj_from_to f₁ (elt_of (B i)) (elt_of (B j)), from and.left hf1, 
--- have ∀ a : Q, a ∈ elt_of (B i) → wqo.le a (f₁ a) ∧ f₁ a ∈ elt_of (B j), from and.right hf1, 
--- let f₂ (q : Q) : Q := if q = qn i then qn j else f₁ q in
--- have nondescending : ∀ a : Q, a ∈ elt_of (Higman's_mbs i) → wqo.le a (f₂ a) ∧ f₂ a ∈ elt_of (Higman's_mbs j), from take a, assume Ha, 
---   have Hor : a = qn i ∨ a ∈ elt_of (B i), by+ rewrite -(ins_B_pairs i) at Ha;exact Ha,
---   begin+ cases (decidable.em (a = qn i)) with [H1, H2], 
---   split, rewrite (if_pos H1), rewrite H1,
---   exact and.left (and.right hij),rewrite (if_pos H1), apply qn_in_mbs,
---   split, have conj : wqo.le a (f₂ a) ∧ f₂ a ∈ elt_of (B j), by rewrite (if_neg H2),
---   apply and.right hf1, apply or_resolve_right Hor H2, exact and.left conj,
---   have conj : wqo.le a (f₂ a) ∧ f₂ a ∈ elt_of (B j), by rewrite (if_neg H2),
---   apply and.right hf1, apply or_resolve_right Hor H2,
---   exact (sub_B_mbs j) (and.right conj) end,
--- have Hmapsto : ∀ a, a ∈ elt_of (Higman's_mbs i) → f₂ a ∈ elt_of (Higman's_mbs j), from 
---   take a, assume Ha, and.right (nondescending a Ha),
--- have ∀ a₁ a₂, a₁ ∈ elt_of (Higman's_mbs i) → a₂ ∈ elt_of (Higman's_mbs i) → f₂ a₁ = f₂ a₂ → a₁ = a₂, from 
---   take a₁ a₂, assume Ha₁, assume Ha₂, assume Heq,
---   have Hora₁ : a₁ = qn i ∨ a₁ ∈ elt_of (B i), by+ rewrite -(ins_B_pairs i) at Ha₁;exact Ha₁,
---   have Hora₂ : a₂ = qn i ∨ a₂ ∈ elt_of (B i), by+ rewrite -(ins_B_pairs i) at Ha₂;exact Ha₂,
---   by_cases
---   (assume Hpos : a₁ = qn i, -- level-1 subcase // pos
---    have eq21j : f₂ a₁ = qn j, from if_pos Hpos,
---    by_contradiction
---    (suppose a₁ ≠ a₂,
---     have neq : qn i ≠ a₂, by+ rewrite Hpos at this;exact this,
---     have eq2212 : f₂ a₂ = f₁ a₂, from if_neg (ne.symm neq),
---     have qn j ∈ elt_of (B j), begin+ rewrite [-eq21j, Heq, eq2212], apply and.left injf₁,
---     exact or_resolve_right Hora₂ (ne.symm neq) end,
---     (qn_not_in_Bn j) this))
---   (assume Hneg, -- level-1 subcase // neg
---    have eq2111 : f₂ a₁ = f₁ a₁, from if_neg Hneg,
---    have a1inBi :  a₁ ∈ elt_of (B i), from or_resolve_right Hora₁ Hneg, 
---    by_cases
---      (assume Hposa₂ : a₂ = qn i, -- level-2 subcase // pos
---       have eq21j : f₂ a₂ = qn j, from if_pos Hposa₂,
---       by_contradiction
---       (suppose a₁ ≠ a₂,
---        have neq2 : a₁ ≠ qn i, by+ rewrite Hposa₂ at this;exact this,
---        have eq2111 : f₂ a₁ = f₁ a₁, from if_neg neq2,
---        have qn j ∈ elt_of (B j), 
---        begin+ rewrite [-eq21j, -Heq, eq2111], apply and.left injf₁, 
---        exact or_resolve_right Hora₁ neq2 end,
---        (qn_not_in_Bn j) this))
---      (assume Hnega₂, -- level-2 subcase // neg
---       have eq2212 : f₂ a₂ = f₁ a₂, from if_neg Hnega₂,
---       have f₁ a₁ = f₂ a₂, by+ rewrite eq2111 at Heq;exact Heq,
---       have eq1112 : f₁ a₁ = f₁ a₂, from eq.trans this eq2212,
---       have a₂ ∈ elt_of (B i), from or_resolve_right Hora₂ Hnega₂, 
---       (and.right injf₁) a₁ a₂ a1inBi this eq1112)),
--- have inj_from_to f₂ (elt_of (Higman's_mbs i)) (elt_of (Higman's_mbs j)), from and.intro Hmapsto this,
--- have ofs (Higman's_mbs i) (Higman's_mbs j), from exists.intro f₂ (and.intro this nondescending),
--- exists.intro i (exists.intro j (and.intro (and.left hij) this))
-
--- theorem goodness_of_Higman's_mbs : is_good Higman's_mbs ofs := exists_embeds
-
--- theorem Higman's_contradiction : false := badness_of_Higman's_mbs goodness_of_Higman's_mbs
-
--- end
-
--- check Higman's_contradiction
-
--- variable {Q : Type}
--- variable [wqo Q]
-
--- theorem ofs_is_good : ∀ f : ℕ → finite_subsets Q , is_good f ofs := 
--- by_contradiction
--- (suppose ¬ ∀ f, is_good f ofs,
--- have ∃ f, ¬ is_good f ofs, from exists_not_of_not_forall this,
--- Higman's_contradiction this)
-
--- definition wqo_finite_subsets [instance] : wqo (finite_subsets Q) :=
--- wqo.mk ofs ofs_refl ofs_trans ofs_is_good
-
--- example : @wqo.le (finite_subsets Q) _ = ofs := rfl
-
--- check wqo_finite_subsets
+end
+
+-- #check Higman's_local_contradition
+
+definition ClassB : Type := {x : finite_subsets Q // ∃ i, B i = x}
+
+definition oB (b1 : ClassB) (b2 : ClassB) : Prop := ofs b1.val b2.val
+
+theorem oB_refl (q : ClassB) : oB q q := ofs_refl q.val
+
+theorem oB_trans (a b c : ClassB) (H1 : oB a b) (H2 : oB b c) : oB a c :=
+ofs_trans _ _ _ H1 H2
+
+    section
+    -- Suppose there exists a bad sequence of objects in ClassB. We show that we can construct a g : ℕ → ℕ such that ¬ is_good (B ∘ g) o. Then we can apply 'exists_sub_bad'. We cannot directly apply this theorem because ClassB is a type distinct from finite_subsets Q.
+    parameter HfB : ∃ f, ¬ is_good f oB
+
+    private definition f' : ℕ → ClassB := some HfB
+
+    private theorem bad_f' : ¬ is_good f' oB := some_spec HfB
+
+    private definition g' (n : ℕ) := (f' n).val
+
+    theorem exists_bad_B_seq : ¬ is_good g' ofs :=
+    suppose is_good g' ofs,
+    let ⟨i,j,hg'⟩ := this in
+    -- obtain (i j) hg', from this,
+    have ofs (f' i).val (f' j).val, from and.right hg',
+    have is_good f' oB, from exists.intro i (exists.intro j (and.intro (and.left hg') this)),
+    bad_f' this
+
+    private definition g (n : ℕ) : ℕ := 
+    have ∃ i, B i = g' n, from (f' n).2,
+    some this
+
+    private theorem comp_eq_g' : B ∘ g = g' :=
+    have ∀ x, B (g x) = g' x, from take x, some_spec (f' x).2,
+    funext this
+
+    private theorem bad_comp : ¬ is_good (B ∘ g) ofs := 
+    have ¬ is_good g' ofs, from exists_bad_B_seq,
+    by rewrite -comp_eq_g' at this;exact this
+
+    theorem exists_sub_bad_B_seq : ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) ofs ∧ ∀ i : ℕ, h 0 ≤ h i := exists_sub_bad B g ofs bad_comp
+
+    end
+
+theorem oB_is_good : ∀ f, is_good f oB :=
+by_contradiction
+(suppose ¬ ∀ f, is_good f oB,
+have ∃ f, ¬ is_good f oB, from classical.exists_not_of_not_forall this,
+have ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) ofs ∧ ∀ i : ℕ, h 0 ≤ h i, from exists_sub_bad_B_seq this,
+Higman's_local_contradition this)
+
+instance wqo_ClassB : wqo ClassB := wqo.mk (quasiorder.mk (has_le.mk oB) oB_refl oB_trans) oB_is_good
+
+instance wqo_prod_Q_ClassB : wqo (Q × ClassB) := wqo_prod
+
+theorem good_prod_Q_ClassB : ∀ f : ℕ → Q × ClassB, is_good f (o_for_pairs o.le oB) := wqo.is_good
+
+lemma B_refl (n : ℕ) : ∃ i, B i = B n := exists.intro n rfl
+
+definition fB (n : ℕ) : ClassB := ⟨B n,B_refl n⟩
+
+private definition p (n : ℕ) : Q × ClassB := (qn n, fB n)
+
+theorem good_p : is_good p (o_for_pairs o.le oB) := good_prod_Q_ClassB p
+
+theorem Hij : ∃ i j, i < j ∧ ((qn i) ≤ (qn j) ∧ oB (fB i) (fB j)) := good_p
+
+theorem exists_embeds : ∃ i j, i < j ∧ ofs (Higman's_mbs i) (Higman's_mbs j) :=
+let ⟨i,j,hij⟩ := good_p in
+have oB (fB i) (fB j), from and.right (and.right hij),
+let ⟨f₁,hf1⟩ := this in
+have injf₁ : inj_from_to f₁ (B i).val (B j).val, from and.left hf1, 
+have rhf1 : ∀ a : Q, a ∈ (B i).val → a ≤ (f₁ a) ∧ f₁ a ∈ (B j).val, from and.right hf1, 
+let f₂ (q : Q) : Q := if q = qn i then qn j else f₁ q in
+have nondescending : ∀ a : Q, a ∈ (Higman's_mbs i).val →  a ≤ (f₂ a) ∧ f₂ a ∈ (Higman's_mbs j).val, from take a, assume Ha, 
+  have Hor : a = qn i ∨ a ∈ (B i).val, by rewrite -(ins_B_pairs H i) at Ha;exact Ha,
+  or.elim (em (a = qn i)) 
+(λ l, have eqf₂a : f₂ a = qn j, from if_pos l, ⟨begin rw [eqf₂a,l], exact hij^.right^.left end, begin rw [eqf₂a], apply qn_in_mbs end⟩) 
+(λ r,have f₂ a=f₁ a, from if_neg r,
+ have conj : a ≤ (f₂ a) ∧ f₂ a ∈ (B j).val, begin rw this, apply rhf1, super end,
+--from ⟨begin rw this, apply and.left (rhf1 _ _), super end,_⟩       
+⟨conj^.left,begin apply sub_B_mbs, exact conj^.right end⟩),
+have Hmapsto : ∀ a, a ∈ (Higman's_mbs i).val → f₂ a ∈ (Higman's_mbs j).val, from 
+  take a, assume Ha, and.right (nondescending a Ha),
+have ∀ a₁ a₂, a₁ ∈ (Higman's_mbs i).val → a₂ ∈ (Higman's_mbs i).val → f₂ a₁ = f₂ a₂ → a₁ = a₂, from 
+  take a₁ a₂, assume Ha₁, assume Ha₂, assume Heq,
+  have Hora₁ : a₁ = qn i ∨ a₁ ∈ (B i).val, by rewrite -(ins_B_pairs H i) at Ha₁;exact Ha₁,
+  have Hora₂ : a₂ = qn i ∨ a₂ ∈ (B i).val, by rewrite -(ins_B_pairs H i) at Ha₂;exact Ha₂,
+  by_cases
+  (assume Hpos : a₁ = qn i, -- level-1 subcase // pos
+   have eq21j : f₂ a₁ = qn j, from if_pos Hpos,
+   by_contradiction
+   (suppose a₁ ≠ a₂,
+    have neq : qn i ≠ a₂, by rewrite Hpos at this;exact this,
+    have eq2212 : f₂ a₂ = f₁ a₂, from if_neg (ne.symm neq),
+    have qn j ∈ (B j).val, begin rewrite [-eq21j, Heq, eq2212], apply and.left injf₁,
+    exact or_resolve_right Hora₂ (ne.symm neq) end,
+    (qn_not_in_Bn j) this))
+  (assume Hneg, -- level-1 subcase // neg
+   have eq2111 : f₂ a₁ = f₁ a₁, from if_neg Hneg,
+   have a1inBi :  a₁ ∈ (B i).val, from or_resolve_right Hora₁ Hneg, 
+   by_cases
+     (assume Hposa₂ : a₂ = qn i, -- level-2 subcase // pos
+      have eq21j : f₂ a₂ = qn j, from if_pos Hposa₂,
+      by_contradiction
+      (suppose a₁ ≠ a₂,
+       have neq2 : a₁ ≠ qn i, by rewrite Hposa₂ at this;exact this,
+       have eq2111 : f₂ a₁ = f₁ a₁, from if_neg neq2,
+       have qn j ∈ (B j).val, 
+       begin rewrite [-eq21j, -Heq, eq2111], apply and.left injf₁, 
+       exact or_resolve_right Hora₁ neq2 end,
+       (qn_not_in_Bn j) this))
+     (assume Hnega₂, -- level-2 subcase // neg
+      have eq2212 : f₂ a₂ = f₁ a₂, from if_neg Hnega₂,
+      have f₁ a₁ = f₂ a₂, by rewrite eq2111 at Heq;exact Heq,
+      have eq1112 : f₁ a₁ = f₁ a₂, from eq.trans this eq2212,
+      have a₂ ∈ (B i).val, from or_resolve_right Hora₂ Hnega₂, 
+      (and.right injf₁) a1inBi this eq1112)),
+have inj_from_to f₂ (Higman's_mbs i).val (Higman's_mbs j).val, from and.intro Hmapsto this,
+have ofs (Higman's_mbs i) (Higman's_mbs j), from exists.intro f₂ (and.intro this nondescending),
+exists.intro i (exists.intro j (and.intro (and.left hij) this))
+
+theorem goodness_of_Higman's_mbs : is_good Higman's_mbs ofs := exists_embeds
+
+theorem Higman's_contradiction : false := badness_of_Higman's_mbs goodness_of_Higman's_mbs
+
+end
+
+-- #check Higman's_contradiction
+
+variable {Q : Type}
+variable [wqo Q]
+
+theorem ofs_is_good : ∀ f : ℕ → finite_subsets Q , is_good f ofs := 
+by_contradiction
+(suppose ¬ ∀ f, is_good f ofs,
+have ∃ f, ¬ is_good f ofs, from classical.exists_not_of_not_forall this,
+Higman's_contradiction this)
+
+instance wqo_finite_subsets : wqo (finite_subsets Q) :=
+wqo.mk (quasiorder.mk (has_le.mk ofs) ofs_refl ofs_trans) ofs_is_good
+
+--example : wqo.le (finite_subsets Q) _ = ofs := rfl
+
+-- #check wqo_finite_subsets
 
 end kruskal

@@ -1,7 +1,24 @@
+import tools.super
 open nat set
+
+section nat
 
 theorem lt_succ_iff_le (m n : nat) : m < succ n ↔ m ≤ n :=
 iff.intro le_of_lt_succ lt_succ_of_le
+
+private theorem or_resolve_right {a b : Prop} (H₁ : a ∨ b) (H₂ : ¬a) : b :=
+by super
+
+theorem eq_zero_or_eq_succ_pred (n : ℕ) : n = 0 ∨ n = succ (pred n) :=
+nat.rec_on n
+  (or.inl rfl)
+  (take m IH, or.inr
+(show succ m = succ (pred (succ m)), from congr_arg succ (eq.symm $ pred_succ m)))
+
+theorem succ_pred_of_pos {n : ℕ} (H : n > 0) : succ (pred n) = n :=
+eq.symm (or_resolve_right (eq_zero_or_eq_succ_pred n) (ne.symm (ne_of_lt H)))
+
+end nat
 
 theorem ext {X : Type} {a b : set X} (H : ∀x, x ∈ a ↔ x ∈ b) : a = b :=
 funext (take x, propext (H x))
@@ -207,6 +224,5 @@ show f' (f x) = x, from H (and.left H2) xa (and.right H2)
 theorem surj_on_inv_fun_of_inj_on (dflt : X) (mapsto : maps_to f a b) (H : inj_on f a) :
   surj_on (inv_fun f a dflt) b a :=
 surj_on_of_right_inv_on mapsto (left_inv_on_inv_fun_of_inj_on dflt H)
-
 
 end
