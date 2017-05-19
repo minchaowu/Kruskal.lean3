@@ -507,9 +507,18 @@ ext (take x, by rw [mem_union_eq]; repeat {rw mem_inter_eq}; repeat {rw mem_unio
 end inter
 
 /- subset -/
+-- definition subset (s₁ s₂ : finset A) : Prop :=
+-- quot.lift_on₂ s₁ s₂
+--   (λ l₁ l₂, sublist l₁.1 l₂.1)
+--   (λ v₁ v₂ w₁ w₂ p₁ p₂, propext (iff.intro
+--     (λ s₁ a i, perm.mem_perm p₂ (s₁ a (perm.mem_perm (perm.symm p₁) i)))
+--     (λ s₂ a i, perm.mem_perm (perm.symm p₂) (s₂ a (perm.mem_perm p₁ i)))))
+
+definition sublist' {T : Type} (l₁ l₂ : list T) := ∀ ⦃a : T⦄, a ∈ l₁ → a ∈ l₂
+
 definition subset (s₁ s₂ : finset A) : Prop :=
 quot.lift_on₂ s₁ s₂
-  (λ l₁ l₂, sublist l₁.1 l₂.1)
+  (λ l₁ l₂, sublist' l₁.1 l₂.1)
   (λ v₁ v₂ w₁ w₂ p₁ p₂, propext (iff.intro
     (λ s₁ a i, perm.mem_perm p₂ (s₁ (perm.mem_perm (perm.symm p₁) i)))
     (λ s₂ a i, perm.mem_perm (perm.symm p₂) (s₂ (perm.mem_perm p₁ i)))))

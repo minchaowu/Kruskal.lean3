@@ -50,8 +50,8 @@ let ⟨k,hk⟩ := this in begin simp [hk, self_lt_succ] end
 theorem eq_values_of_eq_func {A B : Type} {f g : A → B} (H : f = g) (a : A) : f a = g a := 
 by rw H
 
-theorem ne_empty_of_mem {X : Type} {s : set X} {x : X} (H : x ∈ s) : s ≠ ∅ := 
-begin intro Hs, rewrite Hs at H, apply set.not_mem_empty _ H end 
+-- theorem ne_empty_of_mem {X : Type} {s : set X} {x : X} (H : x ∈ s) : s ≠ ∅ := 
+-- begin intro Hs, rewrite Hs at H, apply set.not_mem_empty _ H end 
 
 theorem image_nonempty {A B : Type} {f : A → B} {S : set A} (H : S ≠ ∅) : image f  S ≠ ∅ :=
 have ∃ s, s ∈ S, from exists_mem_of_ne_empty H,
@@ -716,10 +716,11 @@ by_contradiction
 have ∃ f, ¬ is_good f ofs, from classical.exists_not_of_not_forall this,
 Higman's_contradiction this)
 
-instance wqo_finite_subsets : wqo (finite_subsets Q) :=
+def wqo_finite_subsets : wqo (finite_subsets Q) :=
 wqo.mk (quasiorder.mk (has_le.mk ofs) ofs_refl ofs_trans) ofs_is_good
 
---example : wqo.le (finite_subsets Q) _ = ofs := rfl
+#check wqo_finite_subsets.is_good
+-- example : wqo.le (finite_subsets Q) _ = ofs := rfl
 
 -- #check wqo_finite_subsets
 
