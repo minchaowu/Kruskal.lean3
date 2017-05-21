@@ -26,25 +26,25 @@ namespace kruskal
 
 universe u
 
-structure [class] quasiorder (A : Type u) extends has_le A :=
+structure [class] quasiorder (A : Type) extends has_le A :=
 (refl : ∀ a, le a a)
 (trans : ∀ {a b c}, le a b → le b c → le a c)
 
-theorem le_refl {A : Type u} [quasiorder A] (a : A) : a ≤ a := 
+theorem le_refl {A : Type} [quasiorder A] (a : A) : a ≤ a := 
 quasiorder.refl a
 
-theorem le_trans {A : Type u} [H : quasiorder A] {a b c : A} (H₁ : a ≤ b) (H₂ : b ≤ c) : a ≤ c := 
+theorem le_trans {A : Type} [H : quasiorder A] {a b c : A} (H₁ : a ≤ b) (H₂ : b ≤ c) : a ≤ c := 
 quasiorder.trans H₁ H₂
  
-structure [class] wqo  (A : Type u) extends quasiorder A :=
+structure [class] wqo  (A : Type) extends quasiorder A :=
 (is_good : ∀ f : ℕ → A,  ∃ i j, i < j ∧ le (f i) (f j))
 
-def is_good {A : Type u} (f : ℕ → A) (o : A → A → Prop) := ∃ i j : ℕ, i < j ∧ o (f i) (f j)
+def is_good {A : Type} (f : ℕ → A) (o : A → A → Prop) := ∃ i j : ℕ, i < j ∧ o (f i) (f j)
 
-def o_for_pairs {A B : Type u} (o₁ : A → A → Prop) (o₂ : B → B → Prop) (s : A × B) (t : A × B) := 
+def o_for_pairs {A B : Type} (o₁ : A → A → Prop) (o₂ : B → B → Prop) (s : A × B) (t : A × B) := 
 o₁ (s^.1) (t^.1) ∧ o₂ (s^.2) (t^.2) 
 
-instance qo_prod  {A B: Type u} [o₁ : quasiorder A] [o₂ : quasiorder B] : quasiorder (A × B) :=
+instance qo_prod  {A B: Type} [o₁ : quasiorder A] [o₂ : quasiorder B] : quasiorder (A × B) :=
 let op : A × B → A × B → Prop  := o_for_pairs o₁.le o₂.le in
 have refl : ∀ p : A × B, op p p, by intro; apply and.intro; repeat {apply quasiorder.refl},
 have trans : ∀ a b c, op a b → op b c → op a c, from λ x y z h1 h2, 
@@ -58,7 +58,7 @@ theorem lt_of_non_terminal {A : Type u} {o : A → A → Prop} {f : ℕ → A} {
 let ⟨n,h⟩ := exists_not_of_not_forall H in ⟨n,(and_of_not_imp h)⟩
 
 section
-parameter {A : Type u}
+parameter {A : Type}
 parameter [o : wqo A]
 parameter f : ℕ → A
 
