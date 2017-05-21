@@ -51,9 +51,10 @@ have trans : ∀ a b c, op a b → op b c → op a c, from λ x y z h1 h2,
 ⟨(quasiorder.trans h1^.left h2^.left), quasiorder.trans h1^.right h2^.right⟩,
 show _, from quasiorder.mk (has_le.mk op) refl trans
 
-def terminal {A : Type u} (o : A → A → Prop) (f : ℕ → A) (m : ℕ) := ∀ n, m < n → ¬ o (f m) (f n)
+def terminal {A : Type} (o : A → A → Prop) (f : ℕ → A) (m : ℕ) := 
+∀ n, m < n → ¬ o (f m) (f n)
 
-theorem lt_of_non_terminal {A : Type u} {o : A → A → Prop} {f : ℕ → A} {m : ℕ} (H : ¬ @terminal _ o f m) : 
+theorem lt_of_non_terminal {A : Type} {o : A → A → Prop} {f : ℕ → A} {m : ℕ} (H : ¬ @terminal _ o f m) : 
   ∃ n, m < n ∧ o (f m) (f n) :=
 let ⟨n,h⟩ := exists_not_of_not_forall H in ⟨n,(and_of_not_imp h)⟩
 
