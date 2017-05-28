@@ -148,21 +148,7 @@ section
 parameter ts : fin 0 → finite_tree
 parameter f : ℕ → ℕ
 
--- #eval fin.upto 0
--- #eval Suml id []
-
 end
-
--- theorem pos_of_Suml {n : ℕ} (H : n ≠ 0) (ts : fin n → finite_tree) : 0 < Suml (upto n) (λ i, size (ts i)) :=
--- have upto n ≠ nil, from upto_ne_nil_of_ne_zero n H,
--- have ∃ a, ∃ l', fin.upto n = a::l', from exists_eq_cons_of_ne_nil this,
--- obtain a ha, from this,
--- obtain l' hl', from ha,
--- let f := λ i, size (ts i) in
--- have Suml (a::l') f = f a + Suml l' f, from Suml_cons f a l',
--- have f a > 0, from pos_of_size (ts a),
--- have f a + Suml l' f > 0, from add_pos_left this (Suml l' f),
--- by+ simp
 
 theorem lt_of_size_branches_aux {n : ℕ} (ts : fin n → finite_tree) (k : fin n) : size (ts k) < Suml (λ i, size (ts i)) (upto n) + 1 := 
 begin
@@ -171,21 +157,6 @@ assert h : size (ts k) ≤ Suml (λ i, size (ts i)) (upto n),
 apply le_of_mem_Suml kin,
 apply lt_succ_of_le, assumption
 end
-
-
--- theorem le_of_elt_Suml {n : ℕ} (ts : fin n → finite_tree) (k : fin n) : size (ts k) ≤ Suml (upto n) (λ i, size (ts i)) := -- what if n = 0?
--- have k ∈ upto n, from mem_upto n k,
--- have ∃s t, upto n = s ++ (k::t), from mem_split this,
--- obtain (s t) hst, from this,
--- have Suml (upto n) (λ i, size (ts i)) = Suml (s ++ (k::t)) (λ i, size (ts i)), by+ simp,
--- have Suml (s ++ (k::t)) (λ i, size (ts i)) = Suml s (λ i, size (ts i)) + Suml (k::t) (λ i, size (ts i)), from Suml_append s (k::t) (λ i, size (ts i)),
--- have Suml (k::t) (λ i, size (ts i)) = size (ts k) + Suml t (λ i, size (ts i)), from Suml_cons (λ i, size (ts i)) k t,
--- have size (ts k) ≤ size (ts k) + Suml t (λ i, size (ts i)), from le_add_right (size (ts k)) (Suml t (λ i, size (ts i))),
--- have le1 : size (ts k) ≤ Suml (k::t) (λ i, size (ts i)), by+ simp,
--- have Suml (k::t) (λ i, size (ts i)) ≤ Suml s (λ i, size (ts i)) + Suml (k::t) (λ i, size (ts i)), from le_add_left (Suml (k::t) (λ i, size (ts i))) (Suml s (λ i, size (ts i))),
--- have size (ts k) ≤ Suml s (λ i, size (ts i)) + Suml (k::t) (λ i, size (ts i)), from le.trans le1 this,
--- by+ simp
-
 
 def embeds : finite_tree → finite_tree → Prop
 | (@cons _ ts) (@cons _ us) := (∃ j, embeds (cons ts) (us j)) ∨
@@ -230,13 +201,6 @@ exact fin_zero_absurd j,
 apply or.inl (exists.intro j H) 
 end
 
--- theorem not_embeds_empty {ts : fin 0 → finite_tree} (i : fin 0) (t : finite_tree) : ¬ t ≼ ts i :=
--- λ h, have i.val < 0, from i.is_lt, absurd this (not_lt_zero _)
-
-
--- lemma foo {n : ℕ} {f : fin (succ n) → fin 0}  {ss : fin (succ n) → finite_tree} {ts : fin 0 → finite_tree} :
--- ¬ ∀ a, ss a ≼ ts (f a) :=  fin_zero_absurd (f 0)
-
 theorem cons_embeds_cons_right {m n : ℕ} {ss : fin m → finite_tree} {ts : fin n → finite_tree}
     {f : fin m → fin n} (injf : injective f) (Hf : ∀ i, ss i ≼ ts (f i)) :
   cons ss ≼ cons ts :=
@@ -244,11 +208,6 @@ begin cases m, apply node_embeds, cases n,
 exact fin_zero_absurd (f 0),
 apply or.inr (exists.intro f (and.intro injf Hf))
 end
-
--- theorem cons_embeds_cons_dest {m n : ℕ} {ss : fin m → finite_tree} {ts : fin n → finite_tree}
---     (H : cons ss ≼ cons ts) :
---   (∃ j, cons ss ≼ ts j) ∨ (∃ f, injective f ∧ ∀ i, ss i ≼ ts (f i)) :=
--- H
 
 theorem embeds_refl (t : finite_tree) : t ≼ t :=
 begin 

@@ -74,19 +74,6 @@ namespace kruskal
 #check good_pairs
 
 section
-parameter {A : Type}
-parameter G : ℕ → A
-parameter o : A → A → Prop
-parameter H : ¬ is_good G o
-
-private definition min : ℕ := 
--- let ⟨i,j,h⟩ := H in sorry
-
-
-end
-
-
-section
 -- Given a countable set of objects A (which is ordered by f), and assuming that there exists a bad sequence (i.e., f ∘ g) of these objects, we can find a (sub)sequence (f ∘ h) which is bad and ∀ i, h 0 ≤ h i.
 parameter {A : Type}
 parameter f : ℕ → A
