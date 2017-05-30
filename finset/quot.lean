@@ -65,7 +65,7 @@ end
   private lemma eq_imp_rel {q₁ q₂ : quotient s} : q₁ = q₂ → q₁ ~ q₂ :=
   assume h, eq.rec_on h (rel.refl q₁)
 
-  theorem exact {a b : A} : ⟦a⟧ = ⟦b⟧ → a ≈ b :=
+  theorem exact' {a b : A} : ⟦a⟧ = ⟦b⟧ → a ≈ b :=
   assume h, eq_imp_rel h
 
   end exact

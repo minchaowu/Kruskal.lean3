@@ -14,7 +14,7 @@ quot.lift_on s
   (λ l₁ l₂ p, quot.sound (perm.perm_erase_dup_of_perm (perm.perm_map _ p)))
 
 
-infix [priority finset.prio] `'` := image
+infix `'` := image
 
 theorem image_empty (f : A → B) : image f empty = empty := rfl
 
@@ -172,7 +172,7 @@ variables {A : Type} [deceq : decidable_eq A]
 include deceq
 
 definition diff (s t : finset A) : finset A := sep (λ x, x ∉ t) s
-infix [priority finset.prio] ` \ ` := diff
+infix ` \ ` := diff
 
 theorem mem_of_mem_diff {s t : finset A} {x : A} (H : x ∈ s \ t) : x ∈ s :=
 mem_of_mem_sep H

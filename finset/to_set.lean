@@ -72,6 +72,8 @@ to_set.inj H
 theorem eq_eq_to_set_eq : (s = t) = (to_set s = to_set t) :=
 propext (iff.intro (assume H, H ▸ rfl) eq_of_to_set_eq_to_set)
 
+-- #check quot.has_decidable_eq
+
 attribute [instance]
 definition decidable_to_set_eq (s t : finset A) : decidable (to_set s = to_set t) :=
 decidable_of_decidable_of_eq (has_decidable_eq _ _) (eq_eq_to_set_eq _ _)

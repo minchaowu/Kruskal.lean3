@@ -35,7 +35,7 @@ quotient (finset.nodup_list_setoid A)
 namespace finset
 
 -- give finset notation higher priority than set notation, so that it is tried first
-protected definition prio : num := num.succ std.priority.default
+-- protected definition prio : num := num.succ std.priority.default
 
 definition to_finset_of_nodup (l : list A) (n : nodup l) : finset A :=
 ⟦to_nodup_list_of_nodup n⟧
@@ -53,13 +53,15 @@ definition to_finset [decidable_eq A] (l : list A) : finset A :=
 --   end,
 -- quot.sound (eq.subst P !setoid.refl)
 
+
+
 attribute [instance]
 definition has_decidable_eq [decidable_eq A] : decidable_eq (finset A) :=
 λ s₁ s₂, quot.rec_on_subsingleton₂ s₁ s₂
   (λ l₁ l₂,
      match perm.decidable_perm (l₁.1) (l₂.1) with
      | decidable.is_true e := decidable.is_true (quot.sound e)
-     | decidable.is_false n := decidable.is_false (λ e : ⟦l₁⟧ = ⟦l₂⟧, absurd (quot.exact e) n)
+     | decidable.is_false n := decidable.is_false (λ e : ⟦l₁⟧ = ⟦l₂⟧, absurd (quot.exact' e) n)
      end)
 
 definition mem (a : A) (s : finset A) : Prop :=
@@ -68,8 +70,8 @@ quot.lift_on s (λ l, a ∈ l.1)
    (λ ainl₁, perm.mem_perm e ainl₁)
 (λ ainl₂, perm.mem_perm (perm.symm e) ainl₂)))
 
-infix [priority finset.prio] ∈ := mem
-notation [priority finset.prio] a ∉ b := ¬ mem a b
+infix ∈ := mem
+notation a ∉ b := ¬ mem a b
 
 theorem mem_of_mem_list {a : A} {l : nodup_list A} : a ∈ l.1 → a ∈ ⟦l⟧ :=
 λ ainl, ainl
@@ -113,7 +115,7 @@ iff_false_intro (not_mem_empty _)
 theorem mem_empty_eq (x : A) : mem x empty = false :=
 propext (mem_empty_iff _)
 
-theorem eq_empty_of_forall_not_mem {s : finset A} (H : ∀x, ¬ x ∈ s) : s = empty :=
+theorem eq_empty_of_forall_not_mem {s : finset A} (H : ∀x : A, ¬ mem x s) : s = empty :=
 ext (λ x, iff_false_intro (H x))
 
 -- /- universe -/
@@ -272,7 +274,7 @@ include h
 
 definition erase (a : A) (s : finset A) : finset A :=
 quot.lift_on s
-  (λ l, to_finset_of_nodup (erase a l.1) (nodup_erase_of_nodup a l.2))
+  (λ l, to_finset_of_nodup (erase' a l.1) (nodup_erase_of_nodup a l.2))
   (λ (l₁ l₂ : nodup_list A) (p : l₁ ~ l₂), quot.sound (perm.erase_perm_erase_of_perm a p))
 
 theorem not_mem_erase (a : A) (s : finset A) : a ∉ erase a s :=
@@ -341,7 +343,7 @@ quot.lift_on₂ s₁ s₂
                        (nodup_union_of_nodup_of_nodup l₁.2 l₂.2))
   (λ v₁ v₂ w₁ w₂ p₁ p₂, quot.sound (perm.perm_union p₁ p₂))
 
-infix [priority finset.prio] ∪ := union
+infix ∪ := union
 
 theorem mem_union_left {a : A} {s₁ : finset A} (s₂ : finset A) : a ∈ s₁ → a ∈ s₁ ∪ s₂ :=
 quot.induction_on₂ s₁ s₂ (λ l₁ l₂ ainl₁, list.mem_union_left ainl₁ _)
@@ -416,7 +418,7 @@ quot.lift_on₂ s₁ s₂
   (λ v₁ v₂ w₁ w₂ p₁ p₂, quot.sound (perm.perm_inter p₁ p₂))
 
 
-infix [priority finset.prio] ∩ := inter
+infix  ∩ := inter
 
 theorem mem_of_mem_inter_left {a : A} {s₁ s₂ : finset A} : a ∈ s₁ ∩ s₂ → a ∈ s₁ :=
 quot.induction_on₂ s₁ s₂ (λ l₁ l₂ ainl₁l₂, list.mem_of_mem_inter_left ainl₁l₂)
@@ -523,7 +525,7 @@ quot.lift_on₂ s₁ s₂
     (λ s₁ a i, perm.mem_perm p₂ (s₁ (perm.mem_perm (perm.symm p₁) i)))
     (λ s₂ a i, perm.mem_perm (perm.symm p₂) (s₂ (perm.mem_perm p₁ i)))))
 
-infix [priority finset.prio] ⊆ := subset
+infix ⊆ := subset
 
 theorem empty_subset (s : finset A) : empty ⊆ s :=
 quot.induction_on s (λ l, list.nil_subset l.1)

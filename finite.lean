@@ -150,6 +150,57 @@ theorem finite_of_surj_on {B : Type} {f : A → B} {s : set A} [finite s] {t : s
         finite t :=
 finite_subset H
 
+section
+
+-- classical inverse
+
+open classical
+variables {X Y : Type}
+
+
+noncomputable definition inv_fun (f : X → Y) (a : set X) (dflt : X) (y : Y) : X :=
+if H : ∃ x, x ∈ a ∧ f x = y then some H else dflt
+
+theorem inv_fun_pos {f : X → Y} {a : set X} {dflt : X} {y : Y}
+  (H : ∃ x, x ∈ a ∧ f x = y) : (inv_fun f a dflt y ∈ a) ∧ (f (inv_fun f a dflt y) = y) :=
+have H1 : inv_fun f a dflt y = some H, from dif_pos H,
+let ⟨x,ina⟩ := some_spec H in
+⟨by rw H1; assumption,by rw H1; assumption⟩
+
+theorem inv_fun_neg {f : X → Y} {a : set X} {dflt : X} {y : Y}
+  (H : ¬ ∃ x, x ∈ a ∧ f x = y) : inv_fun f a dflt y = dflt :=
+dif_neg H
+
+variables {f : X → Y} {a : set X} {b : set Y}
+
+theorem maps_to_inv_fun {dflt : X} (dflta : dflt ∈ a) :
+  maps_to (inv_fun f a dflt) b a :=
+let f' := inv_fun f a dflt in
+take y,
+assume yb : y ∈ b,
+show f' y ∈ a, from
+  by_cases
+    (assume H : ∃ x, x ∈ a ∧ f x = y,
+      and.left (inv_fun_pos H))
+    (assume H : ¬ ∃x, x ∈ a ∧ f x = y,
+begin dsimp, rw (inv_fun_neg H), assumption end)
+
+theorem left_inv_on_inv_fun_of_inj_on (dflt : X) (H : inj_on f a) :
+  left_inv_on (inv_fun f a dflt) f a :=
+let f' := inv_fun f a dflt in
+take x,
+assume xa : x ∈ a,
+have H1 : ∃ x', x' ∈ a ∧ f x' = f x, from ⟨x,xa,rfl⟩,
+have H2 : f' (f x) ∈ a ∧ f (f' (f x)) = f x, from inv_fun_pos H1,
+show f' (f x) = x, from H (and.left H2) xa (and.right H2)
+
+theorem surj_on_inv_fun_of_inj_on (dflt : X) (mapsto : maps_to f a b) (H : inj_on f a) :
+  surj_on (inv_fun f a dflt) b a :=
+surj_on_of_right_inv_on mapsto (left_inv_on_inv_fun_of_inj_on dflt H)
+
+end
+
+
 theorem finite_of_inj_on {B : Type} {f : A → B} {s : set A} {t : set B} [finite t]
                          (mapsto : maps_to f s t) (injf : inj_on f s) :
         finite s :=
