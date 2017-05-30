@@ -8,12 +8,11 @@ definition inj_from_to {A B: Type} (f : A → B) (S1 : set A) (S2 : set B) := ma
 theorem inj_from_to_id {A : Type} (S1 : set A) : (∀ a, a ∈ S1 → id a ∈ S1) ∧ ∀ a₁ a₂, a₁ ∈ S1 → a₂ ∈ S1 → id a₁ = id a₂ → a₁ = a₂ := 
 begin split, intros, simp, assumption, intros; assumption end
 
-theorem inj_from_to_compose {A B C : Type} {g : B → C} {f : A → B} {S1 : set A} {S2 : set B} {S3 : set C} (Hg : inj_from_to g S2 S3) (Hf : inj_from_to f S1 S2) : inj_from_to (g ∘ f) S1 S3 :=
-have Hl : ∀ a, a ∈ S1 → g (f a) ∈ S3, from 
-  take a, assume Ha, have f a ∈ S2, from Hf^.left Ha,
-  Hg^.left this,
+theorem inj_from_to_compose {A B C : Type} {g : B → C} {f : A → B} {S1 : set A} {S2 : set B} {S3 : set C} 
+  (Hg : inj_from_to g S2 S3) (Hf : inj_from_to f S1 S2) : inj_from_to (g ∘ f) S1 S3 :=
+have Hl : ∀ a, a ∈ S1 → g (f a) ∈ S3, from λ a Ha, Hg^.left (Hf^.left Ha),
 have ∀ a₁ a₂, a₁ ∈ S1 → a₂ ∈ S1 → g (f a₁) = g (f a₂) → a₁ = a₂, from
-  take a₁ a₂, assume Ha₁, assume Ha₂, assume Heq,
+  λ  a₁ a₂ Ha₁ Ha₂ Heq,
   have in1 : f a₁ ∈ S2, from and.left Hf Ha₁,
   have in2 : f a₂ ∈ S2, from and.left Hf Ha₂,
   have f a₁ = f a₂, from and.right Hg in1 in2 Heq, 
@@ -46,9 +45,6 @@ or.elim (nat.lt_or_eq_of_le this)
 theorem lt_pred_nonzero_self {n : ℕ} (H : n ≠ 0) : pred n < n :=
 have ∃ k, n = succ k, from exists_eq_succ_of_ne_zero H,
 let ⟨k,hk⟩ := this in begin simp [hk, self_lt_succ] end
-
-theorem eq_values_of_eq_func {A B : Type} {f g : A → B} (H : f = g) (a : A) : f a = g a := 
-by rw H
 
 -- theorem ne_empty_of_mem {X : Type} {s : set X} {x : X} (H : x ∈ s) : s ≠ ∅ := 
 -- begin intro Hs, rewrite Hs at H, apply set.not_mem_empty _ H end 
@@ -83,9 +79,7 @@ parameter H : ¬ is_good (f ∘ g) o
 
 definition ran_g : set ℕ := {x : ℕ | ∃ i, g i = x}
 
-theorem ne_empty_ran : ran_g ≠ ∅ := 
-have g 0 ∈ ran_g, from exists.intro 0 rfl,
-set.ne_empty_of_mem this
+theorem ne_empty_ran : ran_g ≠ ∅ := set.ne_empty_of_mem ⟨0,rfl⟩
 
 private definition min : ℕ := least ran_g ne_empty_ran
 
@@ -105,9 +99,8 @@ theorem exists_sub_bad : ∃ h : ℕ → ℕ, ¬ is_good (f ∘ h) o ∧ ∀ i :
 have badness : ¬ is_good (f ∘ h) o, from
    suppose is_good (f ∘ h) o,
    let ⟨i,j,hij⟩ := this in
-   have Hr : o (f (g (index_of_min + i))) (f (g (index_of_min + j))), from and.right hij,
    have index_of_min + i < index_of_min + j, from add_lt_add_left (and.left hij) _,
-   have is_good (f ∘ g) o, from exists.intro (index_of_min + i) (exists.intro (index_of_min + j) (and.intro this Hr)),
+   have is_good (f ∘ g) o, from ⟨index_of_min + i,⟨index_of_min + j,⟨this,hij^.right⟩⟩⟩,
    H this,
 have ∀ i : ℕ, h 0 ≤ h i, from λ i, minimality_of_min (index_of_min + i),
 ⟨h,⟨badness,this⟩⟩
@@ -118,25 +111,25 @@ definition finite_subsets (Q : Type) : Type := {x : set Q // finite x}
 
 definition non_descending {Q : Type} (A B : finite_subsets Q) (o : Q → Q → Prop) (f : Q → Q) := ∀ a : Q, a ∈ A.1 → o a (f a) ∧ f a ∈ B.1
 
-definition order_on_finite_subsets {Q : Type} (o : Q → Q → Prop) (A B : finite_subsets Q) := ∃ f, inj_from_to f A.1 B.1 ∧ non_descending A B o f
+definition star {Q : Type} (o : Q → Q → Prop) (A B : finite_subsets Q) := ∃ f, inj_from_to f A.1 B.1 ∧ non_descending A B o f
 
-definition extends_at {A : Type} (n : ℕ) (f : ℕ → A) (g : ℕ → A) : Prop := ∀ m, m ≤ n → g m = f m
+definition extends_at {A : Type} (n : ℕ) (f : ℕ → A) (g : ℕ → A) : Prop := ∀ m ≤ n, g m = f m
 
 theorem extends_at.refl {A : Type} {n : ℕ} {f : ℕ → A} : extends_at n f f := λ m H, rfl
 
-theorem extends_at.trans {A : Type} {n m : ℕ} {f g h: ℕ → A} (H1 : extends_at n f g) (H2 : extends_at m g h) (H3 : n ≤ m) : extends_at n f h :=
-take k, assume H,
-have g k = f k, from H1 k H,
+theorem extends_at.trans {A : Type} {n m : ℕ} {f g h: ℕ → A} (H1 : extends_at n f g) (H2 : extends_at m g h) (H3 : n ≤ m) : 
+  extends_at n f h :=
+λ k H, have g k = f k, from H1 k H,
 have k ≤ m, from nat.le_trans H H3,
 have h k = g k, from H2 k this,
 by super
 
-definition induced_set_of_exists {A : Type} {P : A → Prop} (H : ∃ x, P x) : set A := {x | P x}
+-- definition induced_set_of_exists {A : Type} {P : A → Prop} (H : ∃ x, P x) : set A := {x | P x}
 
-theorem nonempty_induced_set {A : Type} {P : A → Prop} (H : ∃ x, P x) : induced_set_of_exists H ≠ ∅ := let ⟨a,h⟩ := H in set.ne_empty_of_mem h
+-- theorem nonempty_induced_set {A : Type} {P : A → Prop} (H : ∃ x, P x) : induced_set_of_exists H ≠ ∅ := let ⟨a,h⟩ := H in set.ne_empty_of_mem h
 
-theorem property_of_induced_set {A : Type} {P : A → Prop} (H : ∃ x, P x) : ∀ s, s ∈ induced_set_of_exists H → P s := 
-λ s h, h
+-- theorem property_of_induced_set {A : Type} {P : A → Prop} (H : ∃ x, P x) : ∀ s, s ∈ induced_set_of_exists H → P s := 
+-- λ s h, h
 
 theorem least_seq_at_n {S : set (ℕ → ℕ)} (H : S ≠ ∅) (n : ℕ) : ∃ f, f ∈ S ∧ ∀ g, g ∈ S → f n ≤ g n :=
 let T : set ℕ := {x | ∃ f, f ∈ S ∧ f n = x} in
@@ -162,47 +155,43 @@ parameter {P : (ℕ → A) → Prop}
 parameter g : A → ℕ -- a function which calculates the cardinality of a : A in some sense.
 parameter H : ∃ f : ℕ → A, P f
 
-definition card_of_f (f : ℕ → A) (n : ℕ) := g (f n)
+-- definition card_of_f (f : ℕ → A) (n : ℕ) : ℕ := g (f n)
 
-definition set_of_f := induced_set_of_exists H
+definition colle : set (ℕ → A) := {f | P f}
 
-lemma nonempty_set_of_f : set_of_f ≠ ∅ :=  nonempty_induced_set H
+lemma nonempty_colle : colle ≠ ∅ :=  let ⟨a,h⟩ := H in set.ne_empty_of_mem h
 
-definition S : set (ℕ → ℕ) := image card_of_f set_of_f
+definition S : set (ℕ → ℕ) := image (λ f, g ∘ f) colle
 
-lemma nonempty_S : S ≠ ∅ := image_nonempty nonempty_set_of_f
+lemma nonempty_S : S ≠ ∅ := image_nonempty nonempty_colle
 
-theorem exists_min_f (n : ℕ) : ∃ f, f ∈ S ∧ ∀ g, g ∈ S → f n ≤ g n := least_seq_at_n nonempty_S n
+theorem exists_min_func (n : ℕ) : ∃ f, f ∈ S ∧ ∀ g, g ∈ S → f n ≤ g n := least_seq_at_n nonempty_S n
 
--- let ⟨l,r⟩ := some_spec (exists_min_f n) does not work
-definition minf_at_n (n : ℕ) : ℕ → A := 
-let fc := some (exists_min_f n) in
-have fc ∈ S ∧ ∀ g, g ∈ S → fc n ≤ g n, from (some_spec (exists_min_f n)),
+-- let ⟨l,r⟩ := some_spec (exists_min_func n) does not work
+definition min_func (n : ℕ) : ℕ → A := 
+let fc := some (exists_min_func n) in
+have fc ∈ S ∧ ∀ g, g ∈ S → fc n ≤ g n, from (some_spec (exists_min_func n)),
 some (and.left this)
 
-theorem property_of_minf (n : ℕ) : P (minf_at_n n) :=
-let fc := some (exists_min_f n) in
-let ⟨l,r⟩ := some_spec (exists_min_f n) in
--- have fc ∈ S, from sorry,--and.left (some_spec (exists_min_f n)),
-have minf_at_n n = some l, from rfl,
-have minf_at_n n ∈ set_of_f ∧ card_of_f (minf_at_n n) = fc, from some_spec l ,
-have minf_at_n n ∈ set_of_f, from and.left this,
-property_of_induced_set  _  _ this
+theorem min_func_property (n : ℕ) : P (min_func n) :=
+let fc := some (exists_min_func n) in
+let ⟨l,r⟩ := some_spec (exists_min_func n) in
+have min_func n ∈ colle ∧ (λ f, g ∘ f) (min_func n) = fc, from some_spec l ,
+this^.left
 
--- For every f satisfying P, we have the inequality. Intuitively, it says that |(minf_at_n n) n| is always less than or equal to |f n|.
-theorem minimality_of_minf (f : ℕ → A) (Hp : P f) (n : ℕ) : g (minf_at_n n n) ≤ g (f n) := 
-let fc := some (exists_min_f n) in
-let ⟨l,r⟩ := some_spec (exists_min_f n) in
--- have fc ∈ S, from and.left (some_spec (exists_min_f n)),
-have minf_at_n n ∈ set_of_f ∧ card_of_f (minf_at_n n) = fc, from some_spec l,
-have card_of_f (minf_at_n n) = fc, from and.right this, 
-have eq2 : card_of_f (minf_at_n n) n = fc n, from eq_values_of_eq_func this n, 
-have Hr : ∀ g, g ∈ S → fc n ≤ g n, from and.right (some_spec (exists_min_f n)),
-have card_of_f f ∈ S, from exists.intro f (and.intro Hp rfl),
-have le : fc n ≤ card_of_f f n, from Hr _ this,
-have card_of_f (minf_at_n n) n = g (minf_at_n n n), from rfl,
-have card_of_f f n = g (f n), from rfl,
-have card_of_f (minf_at_n n) n ≤ card_of_f f n, by rewrite -eq2 at le;exact le,
+-- For every f satisfying P, we have the inequality. Intuitively, it says that |(min_func n) n| is always less than or equal to |f n|.
+theorem min_func_minimality (f : ℕ → A) (Hp : P f) (n : ℕ) : g (min_func n n) ≤ g (f n) := 
+let fc := some (exists_min_func n) in
+let ⟨l,r⟩ := some_spec (exists_min_func n) in
+have min_func n ∈ colle ∧ (λ f, g ∘ f) (min_func n) = fc, from some_spec l,
+have (λ f, g ∘ f) (min_func n) = fc, from and.right this, 
+have eq2 : (λ f, g ∘ f) (min_func n) n = fc n, by rw this, 
+have Hr : ∀ g, g ∈ S → fc n ≤ g n, from and.right (some_spec (exists_min_func n)),
+have (λ f, g ∘ f) f ∈ S, from exists.intro f (and.intro Hp rfl),
+have le : fc n ≤ (λ f, g ∘ f) f n, from Hr _ this,
+-- have (λ f, g ∘ f) (min_func n) n = g (min_func n n), from rfl,
+-- have (λ f, g ∘ f) f n = g (f n), from rfl,
+have (λ f, g ∘ f) (min_func n) n ≤ (λ f, g ∘ f) f n, by rewrite -eq2 at le;exact le,
 by super
 
 end
@@ -217,16 +206,16 @@ parameter H : ∃ f, P f
 -- construct a sequence of functions with property P such that each one extends its predecessor and is the minimal one at n.
 noncomputable definition mbs_helper (n : ℕ) : {f : ℕ → A // P f} :=
 nat.rec_on n
-(let f₀ := minf_at_n g H 0 in
- have P f₀, from property_of_minf g H 0,
+(let f₀ := min_func g H 0 in
+ have P f₀, from min_func_property g H 0,
  ⟨f₀,this⟩)
 (λ pred h',
 let f' := h'.1 in
 have H1 : extends_at pred f' f', from extends_at.refl,
 have H2 : P f', from h'.2,
 have HP : ∃ f, extends_at pred f' f ∧ P f, from exists.intro f' (and.intro H1 H2),
-let fn := minf_at_n g HP (succ pred) in
-have extends_at pred f' fn ∧ P fn, from property_of_minf g HP (succ pred),
+let fn := min_func g HP (succ pred) in
+have extends_at pred f' fn ∧ P fn, from min_func_property g HP (succ pred),
 have P fn, from and.right this,
 ⟨fn,this⟩)
 
@@ -237,7 +226,7 @@ have P fn, from and.right this,
   lemma helper_ext_refl : extends_at n helper_elt helper_elt := extends_at.refl
   lemma helper_has_property : P helper_elt := (mbs_helper n).2
   lemma helper_inner_hyp : ∃ g, extends_at n helper_elt g ∧ P g := exists.intro helper_elt (and.intro helper_ext_refl helper_has_property)
-  theorem succ_ext_of_mbs_helper : extends_at n helper_elt helper_succ := and.left (property_of_minf g helper_inner_hyp (succ n))
+  theorem succ_ext_of_mbs_helper : extends_at n helper_elt helper_succ := and.left (min_func_property g helper_inner_hyp (succ n))
   end
 
 theorem ext_of_mbs_helper (n : ℕ) : ∀ m, m ≤ n → extends_at m  (mbs_helper m).1 (mbs_helper n).1 :=
@@ -297,7 +286,7 @@ have good : is_good (seq_of_bad_seq j).1 o, from exists.intro i (exists.intro j 
 have ¬ is_good (seq_of_bad_seq j).1 o, from (seq_of_bad_seq j).2, 
 this good
 
-theorem minimality_of_mbs_0 (f : ℕ → A) (Hf : ¬ is_good f o) : g (minimal_bad_seq 0) ≤ g (f 0) := minimality_of_minf g H f Hf 0
+theorem minimality_of_mbs_0 (f : ℕ → A) (Hf : ¬ is_good f o) : g (minimal_bad_seq 0) ≤ g (f 0) := min_func_minimality g H f Hf 0
 
 theorem minimality_of_mbs (n : ℕ) (f : ℕ → A) (H1 : extends_at n minimal_bad_seq f ∧ ¬ is_good f o) : g (minimal_bad_seq (succ n)) ≤ g (f (succ n)) := 
 have Hl : ∀ m, m ≤ n →  f m = (bad_seq_elt n) m, from 
@@ -305,8 +294,8 @@ have Hl : ∀ m, m ≤ n →  f m = (bad_seq_elt n) m, from
   have bad_seq_elt n m = minimal_bad_seq m, from congruence_of_seq_of_bad_seq Hle,
   by super, --by+ simp,
 have ins_P : extends_at n (bad_seq_elt n) f ∧ ¬ is_good f o, from and.intro Hl (and.right H1),
-have ineq : g (minf_at_n g (bad_seq_inner_hyp n) (succ n) (succ n)) ≤ g (f (succ n)), from minimality_of_minf g (bad_seq_inner_hyp n) f ins_P (succ n), 
-have minimal_bad_seq (succ n) = minf_at_n g (bad_seq_inner_hyp n) (succ n) (succ n), from rfl,
+have ineq : g (min_func g (bad_seq_inner_hyp n) (succ n) (succ n)) ≤ g (f (succ n)), from min_func_minimality g (bad_seq_inner_hyp n) f ins_P (succ n), 
+have minimal_bad_seq (succ n) = min_func g (bad_seq_inner_hyp n) (succ n) (succ n), from rfl,
 -- by+ rewrite (eq.symm this) at ineq; exact ineq
 by super
 
@@ -326,37 +315,37 @@ parameter Hg : ¬ is_good g o
 -- in Higman's lemma in Williams 1963, h is f, g is the bad sequence B ∘ f
 parameter H : ∀ i j, o (f i) (g (j - h 0)) → o (f i) (f (h (j - h 0))) 
 
-definition combined_seq (n : ℕ) : Q := if h 0 ≠ 0 ∧ n ≤ pred (h 0) then f n else g (n - (h 0))
+definition comb (n : ℕ) : Q := if h 0 ≠ 0 ∧ n ≤ pred (h 0) then f n else g (n - (h 0))
 
-theorem g_part_of_combined_seq (H : (h 0) = 0) : ∀ x, combined_seq x = g x :=
+theorem g_part_of_comb (H : (h 0) = 0) : ∀ x, comb x = g x :=
 take n, have ¬ (h 0) ≠ 0, from not_not_intro H,
 have ¬ ((h 0) ≠ 0 ∧ n ≤ pred (h 0)), from not_and_of_not_left (n ≤ pred (h 0)) this,
-have combined_seq n = g (n - (h 0)), from if_neg this,
+have comb n = g (n - (h 0)), from if_neg this,
 by simp [this, H]
 
-theorem badness_of_combined_seq : ¬ is_good combined_seq o := 
+theorem badness_of_comb : ¬ is_good comb o := 
 λ good, 
 let ⟨i,j,hw⟩ := good in
 by_cases
 (suppose (h 0) = 0, 
-have combined_seq = g, begin apply funext, apply g_part_of_combined_seq, exact this end,
+have comb = g, begin apply funext, apply g_part_of_comb, exact this end,
 have is_good g o, by rw this at good;exact good,
 Hg this)
 (assume ne, 
   by_cases
   (assume Hposi : i ≤ pred (h 0), 
-   have eq1i : combined_seq i = f i, from if_pos (and.intro ne Hposi),
+   have eq1i : comb i = f i, from if_pos (and.intro ne Hposi),
    by_cases
      (suppose j ≤ pred (h 0), 
-      have eq1j : combined_seq j = f j, from if_pos (and.intro ne this), 
-      have o (combined_seq i) (combined_seq j), from and.right hw,
-      have o (combined_seq i) (f j), by rewrite eq1j at this; exact this,
+      have eq1j : comb j = f j, from if_pos (and.intro ne this), 
+      have o (comb i) (comb j), from and.right hw,
+      have o (comb i) (f j), by rewrite eq1j at this; exact this,
       have o (f i) (f j), begin rw -eq1i, exact this end,
       have is_good f o, from exists.intro i (exists.intro j (and.intro (and.left hw) this)),
       show _, from Hf this)
      (suppose ¬ j ≤ pred (h 0), 
       have ¬ ((h 0) ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
-      have eq2j : combined_seq j = g (j - (h 0)), from if_neg this, 
+      have eq2j : comb j = g (j - (h 0)), from if_neg this, 
       have o (f i) (g (j - (h 0))), begin rw [-eq2j,-eq1i], exact hw^.right end,
      have Hr : o (f i) (f (h (j - (h 0)))), from H _ _ this,
      have i < h (j - (h 0)), from
@@ -368,7 +357,7 @@ Hg this)
   (assume Hnegi, 
    have iht : pred (h 0) < i, from lt_of_not_ge Hnegi,
    have ¬ (h 0 ≠ 0 ∧ i ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegi,
-   have eq2i : combined_seq i = g (i - h 0), from if_neg this,
+   have eq2i : comb i = g (i - h 0), from if_neg this,
    by_cases
    (assume Hposj : j ≤ pred (h 0), 
     have j < i, from lt_of_le_of_lt Hposj iht,
@@ -376,9 +365,9 @@ Hg this)
    (assume Hnegj, 
     have pred (h 0) < j, from lt_of_not_ge Hnegj,
     have ¬ (h 0 ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegj,
-    have eq2j : combined_seq j = g (j - h 0), from if_neg this,
-    have o (combined_seq i) (combined_seq j), from and.right hw,
-    have o (combined_seq i) (g (j - h 0)), begin rw -eq2j, exact this end, --by simp,
+    have eq2j : comb j = g (j - h 0), from if_neg this,
+    have o (comb i) (comb j), from and.right hw,
+    have o (comb i) (g (j - h 0)), begin rw -eq2j, exact this end, --by simp,
     have Hr2 : o (g (i - h 0)) (g (j - h 0)), begin rw -eq2i, exact this end,-- by simp,
     have ige : h 0 ≤ i, from gt_of_gt_pred iht,
     have jgt : h 0 < j, from lt_of_le_of_lt ige (and.left hw),
@@ -407,13 +396,13 @@ parameter Hg : ¬ is_good g o
 parameter H : ∀ i j, o (minimal_bad_seq m Hex i) (g (j - h 0)) → o (minimal_bad_seq m Hex i) ((minimal_bad_seq m Hex) (h (j - h 0)))
 parameter Hbp : m (g 0) < m (minimal_bad_seq m Hex (h 0))
 
-definition comb_seq_with_mbs := combined_seq (minimal_bad_seq m Hex) g h
+definition comb_seq_with_mbs := comb (minimal_bad_seq m Hex) g h
 
 theorem g_part_of_comb_seq_with_mbs (H1 : (h 0) = 0) : ∀ x, comb_seq_with_mbs x = g x := 
-begin apply g_part_of_combined_seq, assumption end
+begin apply g_part_of_comb, assumption end
 
 theorem badness_of_comb_seq_with_mbs : ¬ is_good comb_seq_with_mbs o := 
-badness_of_combined_seq (minimal_bad_seq m Hex) g h Hh (badness_of_mbs m Hex) Hg H
+badness_of_comb (minimal_bad_seq m Hex) g h Hh (badness_of_mbs m Hex) Hg H
 
 theorem comb_seq_extends_mbs_at_pred_bp (H : h 0 ≠ 0): extends_at (pred (h 0)) (minimal_bad_seq m Hex) comb_seq_with_mbs := λ m, λ Hm, if_pos (and.intro H Hm)
 
@@ -457,13 +446,13 @@ section
 parameter {Q : Type}
 parameter [o : wqo Q]
 
-definition ofs := @order_on_finite_subsets Q o.le
+definition sub := @star Q o.le
 
-theorem ofs_refl (q : finite_subsets Q) : ofs q q :=
+theorem sub_refl (q : finite_subsets Q) : sub q q :=
 have ∀ a : Q, a ∈ q.1 → a ≤ (id a) ∧ id a ∈ q.1, begin intros, split, simp, apply quasiorder.refl, simp, assumption end,
 exists.intro id (and.intro (inj_from_to_id q.1) this)
 
-theorem ofs_trans (a b c : finite_subsets Q) (H1 : ofs a b) (H2 : ofs b c) : ofs a c :=
+theorem sub_trans (a b c : finite_subsets Q) (H1 : sub a b) (H2 : sub b c) : sub a c :=
 let ⟨f,hf⟩ := H1 in
 let ⟨g,hg⟩ := H2 in
 have inj : inj_from_to (g ∘ f) a.1 c.1, from inj_from_to_compose (and.left hg) (and.left hf),
@@ -477,22 +466,22 @@ have ∀ q : Q, q ∈ a.1 → q ≤ ((g ∘ f) q) ∧ (g ∘ f) q ∈ c.1, from
   and.intro qle this,
 exists.intro (g ∘ f) (and.intro inj this)
 
-parameter H : ∃ f : ℕ → finite_subsets Q, ¬ is_good f ofs
+parameter H : ∃ f : ℕ → finite_subsets Q, ¬ is_good f sub
 
 definition card_of_finite_subsets {A : Type} (s : finite_subsets A) := card s.1
 
 definition Higman's_mbs (n : ℕ) : finite_subsets Q := minimal_bad_seq card_of_finite_subsets H n
 
-theorem badness_of_Higman's_mbs : ¬ is_good Higman's_mbs ofs := badness_of_mbs card_of_finite_subsets H
+theorem badness_of_Higman's_mbs : ¬ is_good Higman's_mbs sub := badness_of_mbs card_of_finite_subsets H
 
 theorem nonempty_mem_of_mbs (n : ℕ) : (Higman's_mbs n).1 ≠ ∅ := 
 suppose (Higman's_mbs n).1 = ∅, 
 have lt : n < succ n, from lt_succ_self n,
 have nondescending : ∀ a : Q, a ∈ (Higman's_mbs n).1 → a ≤ (id a) ∧ id a ∈ (Higman's_mbs (succ n)).1, from 
   λ a, λ H, have a ∉ (∅ : set Q), from set.not_mem_empty a, by super,
-have ofs (Higman's_mbs n) (Higman's_mbs (succ n)), 
+have sub (Higman's_mbs n) (Higman's_mbs (succ n)), 
 from ⟨id, ⟨⟨λ a Ha,((nondescending a Ha)^.right),λ b Hb h1 h2 h3,by assumption⟩,nondescending⟩⟩,
-have is_good Higman's_mbs ofs, from exists.intro n (exists.intro (succ n) (and.intro lt this)),
+have is_good Higman's_mbs sub, from exists.intro n (exists.intro (succ n) (and.intro lt this)),
 badness_of_Higman's_mbs this
 
 definition B_pairs (n : ℕ) : Q × finite_subsets Q := 
@@ -528,7 +517,7 @@ end
 theorem sub_B_mbs (n : ℕ) : (B n).val ⊆ (Higman's_mbs n).val :=
 by intros; intro; rewrite -ins_B_pairs; apply or.inr; assumption
 
-theorem trans_of_B (i j : ℕ) (H1 : ofs (Higman's_mbs i) (B j)) : ofs (Higman's_mbs i) (Higman's_mbs j) :=
+theorem trans_of_B (i j : ℕ) (H1 : sub (Higman's_mbs i) (B j)) : sub (Higman's_mbs i) (Higman's_mbs j) :=
 let ⟨f,hf⟩ := H1 in
 have inj_from_to f (Higman's_mbs i).val (B j).val, from and.left hf,
 have Hl : ∀ a, a ∈ (Higman's_mbs i).val → f a ∈ (Higman's_mbs j).val, from
@@ -545,21 +534,21 @@ have non_descending (Higman's_mbs i) (Higman's_mbs j) o.le f, from
 exists.intro f (and.intro inj this)
 
 section
-parameter Hg : ∃ g : ℕ → ℕ, ¬ is_good (B ∘ g) ofs ∧ ∀ i : ℕ, g 0 ≤ g i
+parameter Hg : ∃ g : ℕ → ℕ, ¬ is_good (B ∘ g) sub ∧ ∀ i : ℕ, g 0 ≤ g i
 
 private definition g := some Hg
 
-theorem Higman's_Hg : ¬ is_good (B ∘ g) ofs := 
+theorem Higman's_Hg : ¬ is_good (B ∘ g) sub := 
 let ⟨l,r⟩ := some_spec Hg in l
 
-theorem Higman's_Hex : ∃ f, ¬ is_good f ofs := exists.intro (B ∘ g) Higman's_Hg
+theorem Higman's_Hex : ∃ f, ¬ is_good f sub := exists.intro (B ∘ g) Higman's_Hg
 
 theorem Higman's_Hh : ∀ i : ℕ, g 0 ≤ g i := and.right (some_spec Hg)
 
-theorem Higman's_H : ∀ i j, ofs (Higman's_mbs i) ((B ∘ g) (j - g 0)) → ofs (Higman's_mbs i) (Higman's_mbs (g (j - g 0))) := λ i j, λ H1, trans_of_B i (g (j - g 0)) H1
+theorem Higman's_H : ∀ i j, sub (Higman's_mbs i) ((B ∘ g) (j - g 0)) → sub (Higman's_mbs i) (Higman's_mbs (g (j - g 0))) := λ i j, λ H1, trans_of_B i (g (j - g 0)) H1
 
 definition Higman's_comb_seq (n : ℕ) : finite_subsets Q := 
-@comb_seq_with_mbs _ ofs (B ∘ g) g card_of_finite_subsets Higman's_Hex n
+@comb_seq_with_mbs _ sub (B ∘ g) g card_of_finite_subsets Higman's_Hex n
 
 theorem card_B_lt_mbs (n : ℕ) : card (B n).val < card (Higman's_mbs n).val :=
 have finite (B n).val, from (B n).2,
@@ -580,12 +569,12 @@ end
 
 definition ClassB : Type := {x : finite_subsets Q // ∃ i, B i = x}
 
-definition oB (b1 : ClassB) (b2 : ClassB) : Prop := ofs b1.val b2.val
+definition oB (b1 : ClassB) (b2 : ClassB) : Prop := sub b1.val b2.val
 
-theorem oB_refl (q : ClassB) : oB q q := ofs_refl q.val
+theorem oB_refl (q : ClassB) : oB q q := sub_refl q.val
 
 theorem oB_trans (a b c : ClassB) (H1 : oB a b) (H2 : oB b c) : oB a c :=
-ofs_trans _ _ _ H1 H2
+sub_trans _ _ _ H1 H2
 
     section
     -- Suppose there exists a bad sequence of objects in ClassB. We show that we can construct a g : ℕ → ℕ such that ¬ is_good (B ∘ g) o. Then we can apply 'exists_sub_bad'. We cannot directly apply this theorem because ClassB is a type distinct from finite_subsets Q.
@@ -597,11 +586,11 @@ ofs_trans _ _ _ H1 H2
 
     private definition g' (n : ℕ) := (f' n).val
 
-    theorem exists_bad_B_seq : ¬ is_good g' ofs :=
-    suppose is_good g' ofs,
+    theorem exists_bad_B_seq : ¬ is_good g' sub :=
+    suppose is_good g' sub,
     let ⟨i,j,hg'⟩ := this in
     -- obtain (i j) hg', from this,
-    have ofs (f' i).val (f' j).val, from and.right hg',
+    have sub (f' i).val (f' j).val, from and.right hg',
     have is_good f' oB, from exists.intro i (exists.intro j (and.intro (and.left hg') this)),
     bad_f' this
 
@@ -613,11 +602,11 @@ ofs_trans _ _ _ H1 H2
     have ∀ x, B (g x) = g' x, from take x, some_spec (f' x).2,
     funext this
 
-    private theorem bad_comp : ¬ is_good (B ∘ g) ofs := 
-    have ¬ is_good g' ofs, from exists_bad_B_seq,
+    private theorem bad_comp : ¬ is_good (B ∘ g) sub := 
+    have ¬ is_good g' sub, from exists_bad_B_seq,
     by rewrite -comp_eq_g' at this;exact this
 
-    theorem exists_sub_bad_B_seq : ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) ofs ∧ ∀ i : ℕ, h 0 ≤ h i := exists_sub_bad B g ofs bad_comp
+    theorem exists_sub_bad_B_seq : ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) sub ∧ ∀ i : ℕ, h 0 ≤ h i := exists_sub_bad B g sub bad_comp
 
     end
 
@@ -625,14 +614,14 @@ theorem oB_is_good : ∀ f, is_good f oB :=
 by_contradiction
 (suppose ¬ ∀ f, is_good f oB,
 have ∃ f, ¬ is_good f oB, from classical.exists_not_of_not_forall this,
-have ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) ofs ∧ ∀ i : ℕ, h 0 ≤ h i, from exists_sub_bad_B_seq this,
+have ∃ h : ℕ → ℕ, ¬ is_good (B ∘ h) sub ∧ ∀ i : ℕ, h 0 ≤ h i, from exists_sub_bad_B_seq this,
 Higman's_local_contradition this)
 
 instance wqo_ClassB : wqo ClassB := wqo.mk (quasiorder.mk (has_le.mk oB) oB_refl oB_trans) oB_is_good
 
 instance wqo_prod_Q_ClassB : wqo (Q × ClassB) := wqo_prod
 
-theorem good_prod_Q_ClassB : ∀ f : ℕ → Q × ClassB, is_good f (o_for_pairs o.le oB) := wqo.is_good
+theorem good_prod_Q_ClassB : ∀ f : ℕ → Q × ClassB, is_good f (lex o.le oB) := wqo.is_good
 
 lemma B_refl (n : ℕ) : ∃ i, B i = B n := exists.intro n rfl
 
@@ -640,11 +629,11 @@ definition fB (n : ℕ) : ClassB := ⟨B n,B_refl n⟩
 
 private definition p (n : ℕ) : Q × ClassB := (qn n, fB n)
 
-theorem good_p : is_good p (o_for_pairs o.le oB) := good_prod_Q_ClassB p
+theorem good_p : is_good p (lex o.le oB) := good_prod_Q_ClassB p
 
 theorem Hij : ∃ i j, i < j ∧ ((qn i) ≤ (qn j) ∧ oB (fB i) (fB j)) := good_p
 
-theorem exists_embeds : ∃ i j, i < j ∧ ofs (Higman's_mbs i) (Higman's_mbs j) :=
+theorem exists_embeds : ∃ i j, i < j ∧ sub (Higman's_mbs i) (Higman's_mbs j) :=
 let ⟨i,j,hij⟩ := good_p in
 have oB (fB i) (fB j), from and.right (and.right hij),
 let ⟨f₁,hf1⟩ := this in
@@ -696,10 +685,10 @@ have ∀ a₁ a₂, a₁ ∈ (Higman's_mbs i).val → a₂ ∈ (Higman's_mbs i).
       have a₂ ∈ (B i).val, from or_resolve_right Hora₂ Hnega₂, 
       (and.right injf₁) a1inBi this eq1112)),
 have inj_from_to f₂ (Higman's_mbs i).val (Higman's_mbs j).val, from and.intro Hmapsto this,
-have ofs (Higman's_mbs i) (Higman's_mbs j), from exists.intro f₂ (and.intro this nondescending),
+have sub (Higman's_mbs i) (Higman's_mbs j), from exists.intro f₂ (and.intro this nondescending),
 exists.intro i (exists.intro j (and.intro (and.left hij) this))
 
-theorem goodness_of_Higman's_mbs : is_good Higman's_mbs ofs := exists_embeds
+theorem goodness_of_Higman's_mbs : is_good Higman's_mbs sub := exists_embeds
 
 theorem Higman's_contradiction : false := badness_of_Higman's_mbs goodness_of_Higman's_mbs
 
@@ -710,17 +699,17 @@ end
 variable {Q : Type}
 variable [wqo Q]
 
-theorem ofs_is_good : ∀ f : ℕ → finite_subsets Q , is_good f ofs := 
+theorem good_star : ∀ f : ℕ → finite_subsets Q , is_good f sub := 
 by_contradiction
-(suppose ¬ ∀ f, is_good f ofs,
-have ∃ f, ¬ is_good f ofs, from classical.exists_not_of_not_forall this,
+(suppose ¬ ∀ f, is_good f sub,
+have ∃ f, ¬ is_good f sub, from classical.exists_not_of_not_forall this,
 Higman's_contradiction this)
 
 def wqo_finite_subsets : wqo (finite_subsets Q) :=
-wqo.mk (quasiorder.mk (has_le.mk ofs) ofs_refl ofs_trans) ofs_is_good
+wqo.mk (quasiorder.mk (has_le.mk sub) sub_refl sub_trans) good_star
 
 #check wqo_finite_subsets.is_good
--- example : wqo.le (finite_subsets Q) _ = ofs := rfl
+-- example : wqo.le (finite_subsets Q) _ = sub := rfl
 
 -- #check wqo_finite_subsets
 

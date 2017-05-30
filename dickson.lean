@@ -24,28 +24,20 @@ theorem existence_of_nat_gt (n : ℕ) : ∃ m, n < m := ⟨(succ n),(lt_succ_sel
 
 namespace kruskal
 
-universe u
-
 structure [class] quasiorder (A : Type) extends has_le A :=
 (refl : ∀ a, le a a)
 (trans : ∀ {a b c}, le a b → le b c → le a c)
-
-theorem le_refl {A : Type} [quasiorder A] (a : A) : a ≤ a := 
-quasiorder.refl a
-
-theorem le_trans {A : Type} [H : quasiorder A] {a b c : A} (H₁ : a ≤ b) (H₂ : b ≤ c) : a ≤ c := 
-quasiorder.trans H₁ H₂
  
 structure [class] wqo  (A : Type) extends quasiorder A :=
 (is_good : ∀ f : ℕ → A,  ∃ i j, i < j ∧ le (f i) (f j))
 
 def is_good {A : Type} (f : ℕ → A) (o : A → A → Prop) := ∃ i j : ℕ, i < j ∧ o (f i) (f j)
 
-def o_for_pairs {A B : Type} (o₁ : A → A → Prop) (o₂ : B → B → Prop) (s : A × B) (t : A × B) := 
-o₁ (s^.1) (t^.1) ∧ o₂ (s^.2) (t^.2) 
+def lex {A B : Type} (o₁ : A → A → Prop) (o₂ : B → B → Prop) (s : A × B) (t : A × B) := 
+o₁ (s.1) (t.1) ∧ o₂ (s.2) (t.2) 
 
 instance qo_prod  {A B: Type} [o₁ : quasiorder A] [o₂ : quasiorder B] : quasiorder (A × B) :=
-let op : A × B → A × B → Prop  := o_for_pairs o₁.le o₂.le in
+let op : A × B → A × B → Prop  := lex o₁.le o₂.le in
 have refl : ∀ p : A × B, op p p, by intro; apply and.intro; repeat {apply quasiorder.refl},
 have trans : ∀ a b c, op a b → op b c → op a c, from λ x y z h1 h2, 
 ⟨(quasiorder.trans h1^.left h2^.left), quasiorder.trans h1^.right h2^.right⟩,
@@ -68,28 +60,26 @@ parameter f : ℕ → A
   
   def terminal_index (n : ℕ) : {x : ℕ // n < x ∧ terminal o.le f x} := 
   nat.rec_on n (let i := some (H 0) in ⟨i, (some_spec (H 0))⟩)
-  (λ pred index', 
-   let i' := index'.1 in
-   let i := some (H i') in
+  (λ a rec_call, 
+   let i' := rec_call.1, i := some (H i') in
    have p : i' < i ∧ terminal o.le f i, from some_spec (H i'),
-   have pred < i', from (index'.2)^.left,
-   have succ pred < i, from lt_of_le_of_lt this p^.left, 
+   have a < i', from (rec_call.2)^.left,
+   have succ a < i, from lt_of_le_of_lt this p^.left, 
    ⟨i, ⟨this,p^.right⟩⟩)
 
-  lemma increasing_fti {n m : ℕ} : n < m → (terminal_index n).1 < (terminal_index m).1 :=
-  nat.rec_on m (assume H, absurd H dec_trivial)
-  (take a, assume IH, assume lt,
+  lemma increasing_ti {n m : ℕ} : n < m → (terminal_index n).1 < (terminal_index m).1 :=
+  nat.rec_on m (λ H, absurd H dec_trivial)
+  (λ a ih lt,
    have disj : n < a ∨ n = a, from lt_or_eq_of_lt_succ lt,
    have (terminal_index a).1 < (terminal_index (succ a)).1, from
      (some_spec $ H (terminal_index a).1)^.left,
-   or.elim disj (λ Hl, lt_trans (IH Hl) this) (λ Hr, by rw Hr;exact this))
+   or.elim disj (λ Hl, lt_trans (ih Hl) this) (λ Hr, by rw Hr;exact this))
 
   private def g (n : ℕ) := f (terminal_index n).1
 
-  lemma terminal_g (n : ℕ) : terminal o.le g n := 
-  
+  lemma terminal_g (n : ℕ) : terminal o.le g n :=   
   have ∀ n', (terminal_index n).1 < n' → ¬ (f (terminal_index n)^.1) ≤ (f n'), from ((terminal_index n).2)^.right,
-  λ n' h, this (terminal_index n').1 (increasing_fti h)
+  λ n' h, this (terminal_index n').1 (increasing_ti h)
 
   lemma bad_g : ¬ is_good g o.le := 
   have H1 : ∀ i j, i < j → ¬ (g i) ≤ (g j), from λ i j h, (terminal_g i) j h,
@@ -132,9 +122,9 @@ parameters [o₁ : wqo A] [o₂ : wqo B]
   have ¬ @terminal A o₁.le (fst ∘ f) i, from (some_spec finite_terminal_on_A) i ge,
   have sentinel < i ∧ ¬ terminal o₁.le (fst ∘ f) i, from ⟨ge,this⟩,
   ⟨i, this⟩)
-  (λ pred h', let i' := h'.1 in
-  have lt' : sentinel < i', from (h'.2)^.left,
-  have ¬ terminal o₁.le (fst ∘ f) i', from (h'.2)^.right,
+  (λ a rec_call, let i' := rec_call.1 in
+  have lt' : sentinel < i', from (rec_call.2)^.left,
+  have ¬ terminal o₁.le (fst ∘ f) i', from (rec_call.2)^.right,
   have ∃ n, i' < n ∧ ((fst ∘ f) i') ≤ ((fst ∘ f) n), from lt_of_non_terminal this,
   let i := some this in have i' < i, from (some_spec this)^.left,
   have lt : sentinel < i, from lt.trans lt' this,
@@ -151,7 +141,7 @@ parameters [o₁ : wqo A] [o₂ : wqo B]
   show _, from some_spec this
 
   theorem property_of_h {i j : ℕ} : i < j → (fst ∘ f) (h i) ≤ (fst ∘ f) (h j) :=
-  nat.rec_on j (assume H, absurd H dec_trivial)
+  nat.rec_on j (λ H, absurd H dec_trivial)
   (λ a IH lt,
   have H1 : (fst ∘ f) (h a) ≤ (fst ∘ f) (h (succ a)), from (foo a)^.right,
   have disj : i < a ∨ i = a, from lt_or_eq_of_lt_succ lt,
@@ -159,13 +149,13 @@ parameters [o₁ : wqo A] [o₂ : wqo B]
 
   theorem increasing_h {i j : ℕ} : i < j → h i < h j :=
   nat.rec_on j
-  (assume H, absurd H dec_trivial)
-  (take a, assume IH, assume lt,
+  (λ H, absurd H dec_trivial)
+  (λ a ih lt,
   have H1 : (h a) < h (succ a), from (foo a)^.left,
   have disj : i < a ∨ i = a, from lt_or_eq_of_lt_succ lt,
-  or.elim disj (λ Hl, lt_trans (IH Hl) H1) (λ Hr, by simp [Hr, H1]))
+  or.elim disj (λ Hl, lt_trans (ih Hl) H1) (λ Hr, by simp [Hr, H1]))
 
-  theorem good_f : is_good f (o_for_pairs o₁.le o₂.le) :=
+  theorem good_f : is_good f (lex o₁.le o₂.le) :=
   have ∃ i j : ℕ, i < j ∧ (snd ∘ f ∘ h) i ≤ (snd ∘ f ∘ h) j, from wqo.is_good (snd ∘ f ∘ h),
   let ⟨i,j,H⟩ := this in
   have (fst ∘ f) (h i) ≤ (fst ∘ f) (h j), from property_of_h H^.left,
@@ -175,17 +165,17 @@ parameters [o₁ : wqo A] [o₂ : wqo B]
 
   end
   
-theorem good_pairs (f : ℕ → A × B) : is_good f (o_for_pairs o₁.le o₂.le) := good_f f
+theorem good_pairs (f : ℕ → A × B) : is_good f (lex o₁.le o₂.le) := good_f f
 
 end
 
 def wqo_prod {A B : Type} [o₁ : wqo A] [o₂ : wqo B] : wqo (A × B) :=
-let op : A × B → A × B → Prop := o_for_pairs o₁.le o₂.le in
+let op : A × B → A × B → Prop := lex o₁.le o₂.le in
 have refl : ∀ p : A × B, op p p, from λ p, ⟨quasiorder.refl p.1,quasiorder.refl p.2⟩, -- by intro; apply and.intro;repeat {apply wqo.refl},
 have trans : ∀ a b c, op a b → op b c → op a c, from λ a b c h1 h2, 
   ⟨quasiorder.trans h1^.left h2^.left, quasiorder.trans h1^.right h2^.right⟩,
-show _, from wqo.mk (quasiorder.mk (has_le.mk op) refl trans) good_pairs
+show _, from wqo.mk ⟨⟨op⟩,refl,trans⟩ good_pairs
 
--- example {A B : Type} [o₁ : wqo A] [o₂ : wqo B] : (@wqo_prod A B _ _).le = o_for_pairs o₁.le o₂.le := rfl
+-- example {A B : Type} [o₁ : wqo A] [o₂ : wqo B] : (@wqo_prod A B _ _).le = lex o₁.le o₂.le := rfl
 
 end kruskal
