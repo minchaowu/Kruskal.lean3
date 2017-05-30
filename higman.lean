@@ -621,7 +621,7 @@ instance wqo_ClassB : wqo ClassB := wqo.mk (quasiorder.mk (has_le.mk oB) oB_refl
 
 instance wqo_prod_Q_ClassB : wqo (Q × ClassB) := wqo_prod
 
-theorem good_prod_Q_ClassB : ∀ f : ℕ → Q × ClassB, is_good f (lex o.le oB) := wqo.is_good
+theorem good_prod_Q_ClassB : ∀ f : ℕ → Q × ClassB, is_good f (prod_order o.le oB) := wqo.is_good
 
 lemma B_refl (n : ℕ) : ∃ i, B i = B n := exists.intro n rfl
 
@@ -629,7 +629,7 @@ definition fB (n : ℕ) : ClassB := ⟨B n,B_refl n⟩
 
 private definition p (n : ℕ) : Q × ClassB := (qn n, fB n)
 
-theorem good_p : is_good p (lex o.le oB) := good_prod_Q_ClassB p
+theorem good_p : is_good p (prod_order o.le oB) := good_prod_Q_ClassB p
 
 theorem Hij : ∃ i j, i < j ∧ ((qn i) ≤ (qn j) ∧ oB (fB i) (fB j)) := good_p
 

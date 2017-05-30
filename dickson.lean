@@ -33,11 +33,11 @@ structure [class] wqo  (A : Type) extends quasiorder A :=
 
 def is_good {A : Type} (f : ℕ → A) (o : A → A → Prop) := ∃ i j : ℕ, i < j ∧ o (f i) (f j)
 
-def lex {A B : Type} (o₁ : A → A → Prop) (o₂ : B → B → Prop) (s : A × B) (t : A × B) := 
+def prod_order {A B : Type} (o₁ : A → A → Prop) (o₂ : B → B → Prop) (s : A × B) (t : A × B) := 
 o₁ (s.1) (t.1) ∧ o₂ (s.2) (t.2) 
 
 instance qo_prod  {A B: Type} [o₁ : quasiorder A] [o₂ : quasiorder B] : quasiorder (A × B) :=
-let op : A × B → A × B → Prop  := lex o₁.le o₂.le in
+let op : A × B → A × B → Prop  := prod_order o₁.le o₂.le in
 have refl : ∀ p : A × B, op p p, by intro; apply and.intro; repeat {apply quasiorder.refl},
 have trans : ∀ a b c, op a b → op b c → op a c, from λ x y z h1 h2, 
 ⟨(quasiorder.trans h1^.left h2^.left), quasiorder.trans h1^.right h2^.right⟩,
@@ -155,7 +155,7 @@ parameters [o₁ : wqo A] [o₂ : wqo B]
   have disj : i < a ∨ i = a, from lt_or_eq_of_lt_succ lt,
   or.elim disj (λ Hl, lt_trans (ih Hl) H1) (λ Hr, by simp [Hr, H1]))
 
-  theorem good_f : is_good f (lex o₁.le o₂.le) :=
+  theorem good_f : is_good f (prod_order o₁.le o₂.le) :=
   have ∃ i j : ℕ, i < j ∧ (snd ∘ f ∘ h) i ≤ (snd ∘ f ∘ h) j, from wqo.is_good (snd ∘ f ∘ h),
   let ⟨i,j,H⟩ := this in
   have (fst ∘ f) (h i) ≤ (fst ∘ f) (h j), from property_of_h H^.left,
@@ -165,17 +165,17 @@ parameters [o₁ : wqo A] [o₂ : wqo B]
 
   end
   
-theorem good_pairs (f : ℕ → A × B) : is_good f (lex o₁.le o₂.le) := good_f f
+theorem good_pairs (f : ℕ → A × B) : is_good f (prod_order o₁.le o₂.le) := good_f f
 
 end
 
 def wqo_prod {A B : Type} [o₁ : wqo A] [o₂ : wqo B] : wqo (A × B) :=
-let op : A × B → A × B → Prop := lex o₁.le o₂.le in
+let op : A × B → A × B → Prop := prod_order o₁.le o₂.le in
 have refl : ∀ p : A × B, op p p, from λ p, ⟨quasiorder.refl p.1,quasiorder.refl p.2⟩, -- by intro; apply and.intro;repeat {apply wqo.refl},
 have trans : ∀ a b c, op a b → op b c → op a c, from λ a b c h1 h2, 
   ⟨quasiorder.trans h1^.left h2^.left, quasiorder.trans h1^.right h2^.right⟩,
 show _, from wqo.mk ⟨⟨op⟩,refl,trans⟩ good_pairs
 
--- example {A B : Type} [o₁ : wqo A] [o₂ : wqo B] : (@wqo_prod A B _ _).le = lex o₁.le o₂.le := rfl
+-- example {A B : Type} [o₁ : wqo A] [o₂ : wqo B] : (@wqo_prod A B _ _).le = prod_order o₁.le o₂.le := rfl
 
 end kruskal
