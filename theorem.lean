@@ -73,22 +73,22 @@ definition num_of_branches_at_root : finite_tree → ℕ
 
 -- {x : finite_tree × ℕ | ∃ a : fin n, ts a = x.1 ∧ val a = x.2}
 
-definition set_of_branches {n : ℕ} (ts : fin n → finite_tree) : set (finite_tree × ℕ) := {x : finite_tree × ℕ | ∃ a : fin n, ts a = x.1 ∧ val a = x.2}
+def branches_aux {n : ℕ} (ts : fin n → finite_tree) : set (finite_tree × ℕ) := {x : finite_tree × ℕ | ∃ a : fin n, ts a = x.1 ∧ val a = x.2}
 
-theorem empty_branches (ts : fin 0 → finite_tree) : set_of_branches ts = ∅ :=
-have ∀ x, x ∉ set_of_branches ts, from 
+theorem empty_branches (ts : fin 0 → finite_tree) : branches_aux ts = ∅ :=
+have ∀ x, x ∉ branches_aux ts, from 
   take x, 
-  suppose x ∈ set_of_branches ts,
+  suppose x ∈ branches_aux ts,
   let ⟨a,ha⟩ := this in
   have le : val a < 0, from is_lt a,
   have ¬ val a < 0, from not_lt_zero _,
   this le,
 set.eq_empty_of_forall_not_mem this
 
-definition set_of_branches_at_root : finite_tree → set (finite_tree × ℕ) 
-| (@cons n ts) := set_of_branches ts
+definition branches : finite_tree → set (finite_tree × ℕ) 
+| (@cons n ts) := branches_aux ts
 
-theorem embeds_of_branches {t : finite_tree × ℕ} {T : finite_tree} : t ∈ (set_of_branches_at_root T) → t.1 ≼ T := 
+theorem embeds_of_branches {t : finite_tree × ℕ} {T : finite_tree} : t ∈ (branches T) → t.1 ≼ T := 
 begin
 cases T with n ts,
 intro H, cases H with a h,
@@ -98,7 +98,7 @@ fapply exists.intro,
 exact a, rw h^.left, apply embeds_refl
 end
 
-theorem lt_of_size_of_branches {t : finite_tree × ℕ} {T : finite_tree} : t ∈ set_of_branches_at_root T → size t.1 < size T :=
+theorem lt_of_size_of_branches {t : finite_tree × ℕ} {T : finite_tree} : t ∈ branches T → size t.1 < size T :=
 begin 
 cases T with n ts,
 intro h,
@@ -107,17 +107,17 @@ assert h' : ∃ i, ts i = t.1, cases h with b hb,
 cases h' with c hc, rw -hc, apply lt_of_size_branches_aux
 end
 
-theorem finite_set_of_branches {n : ℕ} (ts : fin n → finite_tree) : finite (set_of_branches ts) := 
+theorem finite_set_of_branches {n : ℕ} (ts : fin n → finite_tree) : finite (branches_aux ts) := 
 let f (a : fin n) : finite_tree × ℕ := (ts a, val a) in
 let S : set (finite_tree × ℕ) := {x : finite_tree × ℕ | ∃ a : fin n, f a = x} in
 have finS : finite S, from finite_image_of_fin f,
-have H1 : S ⊆ set_of_branches ts, from 
+have H1 : S ⊆ branches_aux ts, from 
   λ x ⟨a,h⟩, ⟨a,⟨by rw -h,by rw -h⟩⟩,
-have H2 : set_of_branches ts ⊆ S, from 
+have H2 : branches_aux ts ⊆ S, from 
   λ x ⟨a,h⟩, ⟨a,begin dsimp,rw [h^.left, h^.right], apply prod_eta end⟩, 
 begin rw -(subset.antisymm H1 H2), exact finS end
 
-theorem finite_set_of_branches_at_root (t : finite_tree) : finite (set_of_branches_at_root t) := 
+theorem finite_branches (t : finite_tree) : finite (branches t) := 
 by induction t; apply finite_set_of_branches
 
 #check @minimal_bad_seq
@@ -141,12 +141,12 @@ theorem minimality_of_mbs_finite_tree0 (f : ℕ → finite_tree) (Hf : ¬ is_goo
 
 theorem minimality_of_mbs_finite_tree (n : ℕ) (f : ℕ → finite_tree) (H1 : extends_at n mbs_of_finite_tree f ∧ ¬ is_good f embeds) : size (mbs_of_finite_tree (succ n)) ≤ size (f (succ n)) := minimality_of_mbs size H n f H1
 
-definition seq_branches_of_mbs_tree (n : ℕ) : set (finite_tree × ℕ) := set_of_branches_at_root (mbs_of_finite_tree n)
+definition seq_branches_of_mbs_tree (n : ℕ) : set (finite_tree × ℕ) := branches (mbs_of_finite_tree n)
 
 theorem mem_of_seq_branches {n i : ℕ} (ts : fin n → finite_tree) (k : fin n) (Heq : mbs_of_finite_tree i = cons ts) : (ts k, val k) ∈ seq_branches_of_mbs_tree i :=
 have ts k = (ts k, val k).1 ∧ val k = (ts k, val k).2, from and.intro rfl rfl,
 have ∃ a, ts a = (ts k, val k).1 ∧ val a = (ts k, val k).2, from exists.intro k this,
-have (ts k, val k) ∈ set_of_branches_at_root (cons ts), from this,
+have (ts k, val k) ∈ branches (cons ts), from this,
 by rewrite -Heq at this;exact this
 
 definition mbs_tree : Type := {t : finite_tree × ℕ // ∃ i, t ∈ seq_branches_of_mbs_tree i}
@@ -194,7 +194,7 @@ have is_good R embeds', from exists.intro (index_of_R'0 + i) (exists.intro (inde
 theorem Kruskal's_Hg : ¬ is_good (fst ∘ (val ∘ R')) embeds := bad_R'
 
 theorem trans_of_R' {i j : ℕ} (H1 : mbs_of_finite_tree i ≼ (R' j).val.1) : mbs_of_finite_tree i ≼ mbs_of_finite_tree (family_index_of_r' j) := 
-have (R' j).val ∈ set_of_branches_at_root (mbs_of_finite_tree (family_index_of_r' j)), from some_spec (R' j).2,
+have (R' j).val ∈ branches (mbs_of_finite_tree (family_index_of_r' j)), from some_spec (R' j).2,
 have (R' j).val.1 ≼ mbs_of_finite_tree (family_index_of_r' j), from embeds_of_branches this,
 embeds_trans H1 this
 
@@ -252,7 +252,7 @@ theorem copy_refl_left (x : mbs_tree) (n : ℕ) : x ∈ elt_copy_of_seq_branches
 
 theorem copy_refl_right (x : mbs_tree) (n : ℕ) : x.1 ∈ seq_branches_of_mbs_tree n → x ∈ elt_copy_of_seq_branches n := assume Hx, Hx
 
-instance  finite_seq_branches (n : ℕ) : finite (seq_branches_of_mbs_tree n) := finite_set_of_branches_at_root (mbs_of_finite_tree n)
+instance  finite_seq_branches (n : ℕ) : finite (seq_branches_of_mbs_tree n) := finite_branches (mbs_of_finite_tree n)
 
 theorem finite_elt (n : ℕ) : finite (elt_copy_of_seq_branches n) := 
 have mapsto : maps_to subtype.val (elt_copy_of_seq_branches n) (seq_branches_of_mbs_tree n), from take x, assume Hx, copy_refl_left x n Hx,
@@ -301,33 +301,33 @@ theorem mem_mbst_form (a : fin ni) : mbst_form a ∈ elt_copy_of_seq_branches i 
 theorem eq_of_mbst_form {a₁ a₂ : fin ni} (Heq : mbst_form a₁ = mbst_form a₂) : a₁ = a₂ :=
 by apply eq_of_veq;super
 
--- lemma mem (ti : fin ni) : (f' (mbst_form ti)).val ∈ set_of_branches_at_root (mbs_of_finite_tree j) := 
+-- lemma mem (ti : fin ni) : (f' (mbst_form ti)).val ∈ branches (mbs_of_finite_tree j) := 
 -- (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right
 include eqj
 
 -- recover : 
 -- 1. find the mbst_form of ti, say x. 
 -- 2. By nond, we know that (f' x) is in (seq_branches_of_mbs_tree j). 
--- 3. (seq_branches_of_mbs_tree j) is just set_of_branches_at_root (mbs_of_finite_tree j). 
+-- 3. (seq_branches_of_mbs_tree j) is just branches (mbs_of_finite_tree j). 
 -- 4. The latter is just (set_of_branches tsj). 
 -- 5. This means that some a : fin nj corresponds to ti. 6. By choice, take such a fin nj.
 
 definition recover (ti : fin ni) : fin nj :=
 have (f' (mbst_form ti)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,
-have mem : (f' (mbst_form ti)).val ∈ set_of_branches_at_root (mbs_of_finite_tree j), from this, -- this line is redundant
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches tsj, from this,
-have (f' (mbst_form ti)).val ∈ set_of_branches tsj, by rewrite this at mem;exact mem,
+have mem : (f' (mbst_form ti)).val ∈ branches (mbs_of_finite_tree j), from this, -- this line is redundant
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
+have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form ti)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
 have ∃ a : fin nj, tsj a = (f' (mbst_form ti)).val.1 ∧ val a = (f' (mbst_form ti)).val.2, from this,
 some this
 
 theorem perm_recover (ti : fin ni) : tsi ti ≼ tsj (recover ti) := 
 have (f' (mbst_form ti)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,
-have mem : (f' (mbst_form ti)).val ∈ set_of_branches_at_root (mbs_of_finite_tree j), from this,
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (mbs_of_finite_tree j), from rfl,
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches tsj, from this,
-have (f' (mbst_form ti)).val ∈ set_of_branches tsj, by rewrite this at mem;exact mem,
+have mem : (f' (mbst_form ti)).val ∈ branches (mbs_of_finite_tree j), from this,
+have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
+have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form ti)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
 have ∃ a : fin nj, tsj a = (f' (mbst_form ti)).val.1 ∧ val a =  (f' (mbst_form ti)).val.2, from this,
 have tsj (recover ti) = (f' (mbst_form ti)).val.1, from let ⟨a,b⟩ := some_spec this in a,
 have tsi ti ≼ (f' (mbst_form ti)).val.1, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.left,
@@ -336,21 +336,21 @@ by simph
 theorem inj_recover : injective recover := 
 take a₁ a₂, assume Heq,
 have (f' (mbst_form a₁)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,
-have mem : (f' (mbst_form a₁)).val ∈ set_of_branches_at_root (mbs_of_finite_tree j), from this,
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (mbs_of_finite_tree j), from rfl,
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches tsj, from this,
-have (f' (mbst_form a₁)).val ∈ set_of_branches tsj, by rewrite this at mem;exact mem,
+have mem : (f' (mbst_form a₁)).val ∈ branches (mbs_of_finite_tree j), from this,
+have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
+have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form a₁)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
 
 have eeq1 : ∃ a : fin nj, tsj a = (f' (mbst_form a₁)).val.1 ∧ val a = (f' (mbst_form a₁)).val.2, from this,
 have pr11 : tsj (recover a₁) = (f' (mbst_form a₁)).val.1, from let ⟨a,b⟩ := some_spec eeq1 in a,-- proof and.left (some_spec eeq1) qed,
 have pr21 : val (recover a₁) = (f' (mbst_form a₁)).val.2, from let ⟨a,b⟩ := some_spec eeq1 in b, -- proof and.right (some_spec eeq1) qed,
 have (f' (mbst_form a₂)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,-- proof and.right (nond _ (eltini a₂)) qed,
-have mem : (f' (mbst_form a₂)).val ∈ set_of_branches_at_root (mbs_of_finite_tree j), from this,
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (mbs_of_finite_tree j), from rfl,
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches_at_root (cons tsj), by rw eqj, -- by+ rewrite eqj at this{2};exact this, 
-have set_of_branches_at_root (mbs_of_finite_tree j) = set_of_branches tsj, from this,
-have (f' (mbst_form a₂)).val ∈ set_of_branches tsj, by rewrite this at mem;exact mem,
+have mem : (f' (mbst_form a₂)).val ∈ branches (mbs_of_finite_tree j), from this,
+have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by+ rewrite eqj at this{2};exact this, 
+have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form a₂)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
 have eeq2 : ∃ a : fin nj, tsj a = (f' (mbst_form a₂)).val.1 ∧ val a = (f' (mbst_form a₂)).val.2, from this,
 have pr12 : tsj (recover a₂) = (f' (mbst_form a₂)).val.1,  from let ⟨a,b⟩ := some_spec eeq2 in a,-- proof and.left (some_spec eeq2) qed,
 have pr22 : val (recover a₂) = (f' (mbst_form a₂)).val.2, from let ⟨a,b⟩ := some_spec eeq2 in b,-- proof and.right (some_spec eeq2) qed,
