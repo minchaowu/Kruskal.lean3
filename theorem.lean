@@ -73,16 +73,11 @@ definition num_of_branches_at_root : finite_tree → ℕ
 
 -- {x : finite_tree × ℕ | ∃ a : fin n, ts a = x.1 ∧ val a = x.2}
 
-def branches_aux {n : ℕ} (ts : fin n → finite_tree) : set (finite_tree × ℕ) := {x : finite_tree × ℕ | ∃ a : fin n, ts a = x.1 ∧ val a = x.2}
+def branches_aux {n : ℕ} (ts : fin n → finite_tree) : set (finite_tree × ℕ) := 
+{x : finite_tree × ℕ | ∃ a : fin n, ts a = x.1 ∧ val a = x.2}
 
 theorem empty_branches (ts : fin 0 → finite_tree) : branches_aux ts = ∅ :=
-have ∀ x, x ∉ branches_aux ts, from 
-  take x, 
-  suppose x ∈ branches_aux ts,
-  let ⟨a,ha⟩ := this in
-  have le : val a < 0, from is_lt a,
-  have ¬ val a < 0, from not_lt_zero _,
-  this le,
+have ∀ x, x ∉ branches_aux ts, from λ x h, let ⟨a,ha⟩ := h in fin_zero_absurd a,
 set.eq_empty_of_forall_not_mem this
 
 definition branches : finite_tree → set (finite_tree × ℕ) 
