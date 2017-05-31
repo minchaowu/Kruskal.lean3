@@ -5,7 +5,7 @@ noncomputable theory
 
 theorem dne {p : Prop} (H : ¬¬p) : p := or.elim (em p) (assume Hp : p, Hp) (assume Hnp : ¬p, absurd Hnp H)
 
-lemma tag_eq_of_eq {A : Type} {P : A → Prop} {a b : subtype P} (H : a = b) :a.1 = b.1 := by rewrite H
+lemma tag_eq_of_eq {A : Type} {P : A → Prop} {a b : subtype P} (H : a = b) :a.1 = b.1 := by rw H
 
 section
 
@@ -142,7 +142,7 @@ theorem mem_of_seq_branches {n i : ℕ} (ts : fin n → finite_tree) (k : fin n)
 have ts k = (ts k, val k).1 ∧ val k = (ts k, val k).2, from and.intro rfl rfl,
 have ∃ a, ts a = (ts k, val k).1 ∧ val a = (ts k, val k).2, from exists.intro k this,
 have (ts k, val k) ∈ branches (cons ts), from this,
-by rewrite -Heq at this;exact this
+by rw -Heq at this;exact this
 
 definition mbs_tree : Type := {t : finite_tree × ℕ // ∃ i, t ∈ seq_branches_of_mbs_tree i}
 
@@ -312,42 +312,42 @@ include eqj
 definition recover (ti : fin ni) : fin nj :=
 have (f' (mbst_form ti)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,
 have mem : (f' (mbst_form ti)).val ∈ branches (mbs_of_finite_tree j), from this, -- this line is redundant
-have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
-have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
-have (f' (mbst_form ti)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
-have ∃ a : fin nj, tsj a = (f' (mbst_form ti)).val.1 ∧ val a = (f' (mbst_form ti)).val.2, from this,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rw eqj at this{2};exact this, 
+-- have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form ti)).val ∈ branches_aux tsj, by rw this at mem;exact mem,
+-- have ∃ a : fin nj, tsj a = (f' (mbst_form ti)).val.1 ∧ val a = (f' (mbst_form ti)).val.2, from this,
 some this
 
 theorem perm_recover (ti : fin ni) : tsi ti ≼ tsj (recover ti) := 
 have (f' (mbst_form ti)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,
 have mem : (f' (mbst_form ti)).val ∈ branches (mbs_of_finite_tree j), from this,
-have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
-have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
-have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
-have (f' (mbst_form ti)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
-have ∃ a : fin nj, tsj a = (f' (mbst_form ti)).val.1 ∧ val a =  (f' (mbst_form ti)).val.2, from this,
+-- have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rw eqj at this{2};exact this, 
+-- have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form ti)).val ∈ branches_aux tsj, by rw this at mem;exact mem,
+-- have ∃ a : fin nj, tsj a = (f' (mbst_form ti)).val.1 ∧ val a =  (f' (mbst_form ti)).val.2, from this,
 have tsj (recover ti) = (f' (mbst_form ti)).val.1, from let ⟨a,b⟩ := some_spec this in a,
 have tsi ti ≼ (f' (mbst_form ti)).val.1, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.left,
 by simph
 
 theorem inj_recover : injective recover := 
-take a₁ a₂, assume Heq,
+λ a₁ a₂ Heq,
 have (f' (mbst_form a₁)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,
 have mem : (f' (mbst_form a₁)).val ∈ branches (mbs_of_finite_tree j), from this,
-have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
-have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rewrite eqj at this{2};exact this, 
-have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
-have (f' (mbst_form a₁)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
+-- have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by rw eqj at this{2};exact this, 
+-- have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form a₁)).val ∈ branches_aux tsj, by rw this at mem;exact mem,
 
 have eeq1 : ∃ a : fin nj, tsj a = (f' (mbst_form a₁)).val.1 ∧ val a = (f' (mbst_form a₁)).val.2, from this,
 have pr11 : tsj (recover a₁) = (f' (mbst_form a₁)).val.1, from let ⟨a,b⟩ := some_spec eeq1 in a,-- proof and.left (some_spec eeq1) qed,
 have pr21 : val (recover a₁) = (f' (mbst_form a₁)).val.2, from let ⟨a,b⟩ := some_spec eeq1 in b, -- proof and.right (some_spec eeq1) qed,
 have (f' (mbst_form a₂)).val ∈ seq_branches_of_mbs_tree j, from (nond _ (begin dsimp [mbst_form], apply Htsi end))^.right,-- proof and.right (nond _ (eltini a₂)) qed,
 have mem : (f' (mbst_form a₂)).val ∈ branches (mbs_of_finite_tree j), from this,
-have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
-have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by+ rewrite eqj at this{2};exact this, 
-have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
-have (f' (mbst_form a₂)).val ∈ branches_aux tsj, by rewrite this at mem;exact mem,
+-- have branches (mbs_of_finite_tree j) = branches (mbs_of_finite_tree j), from rfl,
+have branches (mbs_of_finite_tree j) = branches (cons tsj), by rw eqj, -- by+ rw eqj at this{2};exact this, 
+-- have branches (mbs_of_finite_tree j) = branches_aux tsj, from this,
+have (f' (mbst_form a₂)).val ∈ branches_aux tsj, by rw this at mem;exact mem,
 have eeq2 : ∃ a : fin nj, tsj a = (f' (mbst_form a₂)).val.1 ∧ val a = (f' (mbst_form a₂)).val.2, from this,
 have pr12 : tsj (recover a₂) = (f' (mbst_form a₂)).val.1,  from let ⟨a,b⟩ := some_spec eeq2 in a,-- proof and.left (some_spec eeq2) qed,
 have pr22 : val (recover a₂) = (f' (mbst_form a₂)).val.2, from let ⟨a,b⟩ := some_spec eeq2 in b,-- proof and.right (some_spec eeq2) qed,
