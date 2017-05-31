@@ -310,6 +310,14 @@ parameter H : ∀ i j, o (f i) (g (j - h 0)) → o (f i) (f (h (j - h 0)))
 
 definition comb (n : ℕ) : Q := if h 0 ≠ 0 ∧ n ≤ pred (h 0) then f n else g (n - (h 0))
 
+-- def comb' (n : ℕ) : Q := if n < h 0 then f n else g (n - (h 0))
+
+-- theorem g_part_of_comb' (H : (h 0) = 0) : ∀ x, comb' x = g x :=
+-- λ n, have ¬ n < h 0, by rw H; apply not_lt_zero ,
+-- have comb' n = g (n - (h 0)), from if_neg this,
+-- by simp [this, H]
+
+
 theorem g_part_of_comb (H : (h 0) = 0) : ∀ x, comb x = g x :=
 take n, have ¬ (h 0) ≠ 0, from not_not_intro H,
 have ¬ ((h 0) ≠ 0 ∧ n ≤ pred (h 0)), from not_and_of_not_left (n ≤ pred (h 0)) this,

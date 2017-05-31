@@ -159,60 +159,62 @@ parameter H' : ∃ f, ¬ is_good f embeds'
 
 definition R : ℕ → mbs_tree := some H'
 
-definition family_index_of_r (n : ℕ) : ℕ := some ((R n).2) 
+definition family_index (n : ℕ) : ℕ := some ((R n).2) 
 
-definition index_set_of_mbs_tree : set ℕ := image family_index_of_r  univ
+definition index_set_of_mbs_tree : set ℕ := image family_index  univ
 
-lemma index_ne_empty : index_set_of_mbs_tree ≠ ∅ := ne_empty_of_image_on_univ family_index_of_r
+lemma index_ne_empty : index_set_of_mbs_tree ≠ ∅ := ne_empty_of_image_on_univ family_index
 
-definition min_family_index := least index_set_of_mbs_tree index_ne_empty
+definition least_family_index := least index_set_of_mbs_tree index_ne_empty
 
-lemma exists_min_r : ∃ i, family_index_of_r i = min_family_index :=
-have min_family_index ∈ index_set_of_mbs_tree, from least_is_mem index_set_of_mbs_tree index_ne_empty,
+lemma exists_least : ∃ i, family_index i = least_family_index :=
+have least_family_index ∈ index_set_of_mbs_tree, from least_is_mem index_set_of_mbs_tree index_ne_empty,
 let ⟨i,h⟩ := this in
-exists.intro i (and.right h)
+⟨i, h^.right⟩
 
-definition index_of_R'0 : ℕ := some exists_min_r
+definition least_index : ℕ := some exists_least
 
-definition R' (n : ℕ) : mbs_tree := R (index_of_R'0 + n)
+definition Kruskal's_g (n : ℕ) : mbs_tree := R (least_index + n)
 
-definition family_index_of_r' (n : ℕ) : ℕ :=  family_index_of_r (index_of_R'0 + n)
+definition Kruskal's_h (n : ℕ) : ℕ :=  family_index (least_index + n)
 
-theorem bad_R' : ¬ is_good R' embeds' :=
-suppose is_good R' embeds',
+theorem bad_Kruskal's_g : ¬ is_good Kruskal's_g embeds' :=
+suppose is_good Kruskal's_g embeds',
 let ⟨i,j,hij⟩ := this in
-have Hr : embeds' (R' i) (R' j), from and.right hij,
-have index_of_R'0 + i < index_of_R'0 + j, from add_lt_add_left (and.left hij) _,
-have is_good R embeds', from exists.intro (index_of_R'0 + i) (exists.intro (index_of_R'0 + j) (and.intro this Hr)),
+have Hr : embeds' (Kruskal's_g i) (Kruskal's_g j), from hij^.right,
+have least_index + i < least_index + j, from add_lt_add_left hij^.left _,
+have is_good R embeds', from ⟨least_index + i, ⟨least_index + j,⟨this, Hr⟩⟩⟩,
 (some_spec H') this
 
-theorem Kruskal's_Hg : ¬ is_good (fst ∘ (val ∘ R')) embeds := bad_R'
+theorem Kruskal's_Hg : ¬ is_good (fst ∘ (val ∘ Kruskal's_g)) embeds := bad_Kruskal's_g
 
-theorem trans_of_R' {i j : ℕ} (H1 : mbs_of_finite_tree i ≼ (R' j).val.1) : mbs_of_finite_tree i ≼ mbs_of_finite_tree (family_index_of_r' j) := 
-have (R' j).val ∈ branches (mbs_of_finite_tree (family_index_of_r' j)), from some_spec (R' j).2,
-have (R' j).val.1 ≼ mbs_of_finite_tree (family_index_of_r' j), from embeds_of_branches this,
+theorem trans_of_Kruskal's_g {i j : ℕ} (H1 : mbs_of_finite_tree i ≼ (Kruskal's_g j).val.1) : 
+mbs_of_finite_tree i ≼ mbs_of_finite_tree (Kruskal's_h j) := 
+have (Kruskal's_g j).val ∈ branches (mbs_of_finite_tree (Kruskal's_h j)), from some_spec (Kruskal's_g j).2,
+have (Kruskal's_g j).val.1 ≼ mbs_of_finite_tree (Kruskal's_h j), from embeds_of_branches this,
 embeds_trans H1 this
 
-theorem size_elt_R'_lt_mbs_finite_tree (n : ℕ) : size (R' n).val.1 < size (mbs_of_finite_tree (family_index_of_r' n)) := lt_of_size_of_branches (some_spec (R' n).2)
+theorem size_elt_Kruskal's_g_lt_mbs_finite_tree (n : ℕ) : size (Kruskal's_g n).val.1 < size (mbs_of_finite_tree (Kruskal's_h n)) := 
+lt_of_size_of_branches (some_spec (Kruskal's_g n).2)
 
-theorem Kruskal's_Hbp : size (R' 0).val.1 < size (mbs_of_finite_tree (family_index_of_r' 0)) := size_elt_R'_lt_mbs_finite_tree 0
+theorem Kruskal's_Hbp : size (Kruskal's_g 0).val.1 < size (mbs_of_finite_tree (Kruskal's_h 0)) := size_elt_Kruskal's_g_lt_mbs_finite_tree 0
 
-lemma family_index_in_index_of_mbs_tree (n : ℕ) : family_index_of_r' n ∈ index_set_of_mbs_tree :=
-have family_index_of_r' n = family_index_of_r (index_of_R'0 + n), from rfl,
-exists.intro (index_of_R'0 + n) (and.intro trivial rfl)
+lemma family_index_in_index_of_mbs_tree (n : ℕ) : Kruskal's_h n ∈ index_set_of_mbs_tree :=
+have Kruskal's_h n = family_index (least_index + n), from rfl,
+⟨(least_index + n),⟨trivial,rfl⟩⟩
 
-theorem Kruskal's_Hh (n : ℕ) : family_index_of_r' 0 ≤ family_index_of_r' n :=
-have family_index_of_r' 0 = family_index_of_r (index_of_R'0 + 0), from rfl,
-have family_index_of_r' 0 = family_index_of_r index_of_R'0, by simph,
-have family_index_of_r index_of_R'0 = min_family_index, from some_spec exists_min_r,
-have family_index_of_r' 0 = min_family_index, by simph,
+theorem Kruskal's_Hh (n : ℕ) : Kruskal's_h 0 ≤ Kruskal's_h n :=
+-- have Kruskal's_h 0 = family_index (least_index + 0), from rfl,
+have Kruskal's_h 0 = family_index least_index, from rfl,--by simph,
+have family_index least_index = least_family_index, from some_spec exists_least,
+have Kruskal's_h 0 = least_family_index, by simph,
 begin rw this, apply minimality, apply family_index_in_index_of_mbs_tree end
 
-theorem Kruskal's_H : ∀ i j, mbs_of_finite_tree i ≼ (R' (j - family_index_of_r' 0)).val.1 → mbs_of_finite_tree i ≼ mbs_of_finite_tree (family_index_of_r' (j - family_index_of_r' 0)) := λ i j, λ H1, trans_of_R' H1
+theorem Kruskal's_H : ∀ i j, mbs_of_finite_tree i ≼ (Kruskal's_g (j - Kruskal's_h 0)).val.1 → mbs_of_finite_tree i ≼ mbs_of_finite_tree (Kruskal's_h (j - Kruskal's_h 0)) := λ i j, λ H1, trans_of_Kruskal's_g H1
 
-definition Kruskal's_comb_seq (n : ℕ) : finite_tree := @comb_seq_with_mbs _ embeds (fst ∘ (val ∘ R')) family_index_of_r' size H n
+definition Kruskal's_comb_seq (n : ℕ) : finite_tree := @comb_seq_with_mbs _ embeds (fst ∘ (val ∘ Kruskal's_g)) Kruskal's_h size H n
 
-theorem Kruskal's_local_contradiction : false := local_contra_of_comb_seq_with_mbs family_index_of_r' size Kruskal's_Hh H Kruskal's_Hg Kruskal's_H Kruskal's_Hbp
+theorem Kruskal's_local_contradiction : false := local_contra_of_comb_seq_with_mbs Kruskal's_h size Kruskal's_Hh H Kruskal's_Hg Kruskal's_H Kruskal's_Hbp
 
 end
 
@@ -243,15 +245,15 @@ theorem good_finite_subsets_of_mbs_tree : ∀ f, is_good f os := wqo_finite_subs
 -- branches at root of mbs_of_finite_tree form a set of mbs_tree
 definition elt_copy_of_seq_branches (n : ℕ) : set mbs_tree := {x : mbs_tree | x.1 ∈ seq_branches_of_mbs_tree n}
 
-theorem copy_refl_left (x : mbs_tree) (n : ℕ) : x ∈ elt_copy_of_seq_branches n → x.1 ∈ seq_branches_of_mbs_tree n := assume Hx, Hx
+theorem copy_refl_left (x : mbs_tree) (n : ℕ) : x ∈ elt_copy_of_seq_branches n → x.1 ∈ seq_branches_of_mbs_tree n := λ Hx, Hx
 
-theorem copy_refl_right (x : mbs_tree) (n : ℕ) : x.1 ∈ seq_branches_of_mbs_tree n → x ∈ elt_copy_of_seq_branches n := assume Hx, Hx
+theorem copy_refl_right (x : mbs_tree) (n : ℕ) : x.1 ∈ seq_branches_of_mbs_tree n → x ∈ elt_copy_of_seq_branches n := λ Hx, Hx
 
 instance  finite_seq_branches (n : ℕ) : finite (seq_branches_of_mbs_tree n) := finite_branches (mbs_of_finite_tree n)
 
 theorem finite_elt (n : ℕ) : finite (elt_copy_of_seq_branches n) := 
-have mapsto : maps_to subtype.val (elt_copy_of_seq_branches n) (seq_branches_of_mbs_tree n), from take x, assume Hx, copy_refl_left x n Hx,
-have inj_on subtype.val (elt_copy_of_seq_branches n), from take x₁ x₁, assume H₁, assume H₂, subtype.eq,
+have mapsto : maps_to subtype.val (elt_copy_of_seq_branches n) (seq_branches_of_mbs_tree n), from λ x Hx, copy_refl_left x n Hx,
+have inj_on subtype.val (elt_copy_of_seq_branches n), from λ x₁ x₂ H₁ H₂, subtype.eq,
 finite_of_inj_on mapsto this
 
 -- this gives a sequence of finite_subsets of mbs_tree. 
@@ -286,7 +288,7 @@ parameter Htsi : ∀ a, (tsi a, val a) ∈ seq_branches_of_mbs_tree i
 lemma eltini (ti : fin ni) : (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := Htsi ti
 
 -- every ti corresponds to some seq_branches_of_mbs_tree i
-lemma pmbsa (ti : fin ni) : ∃ i, (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := exists.intro i (eltini ti)
+lemma pmbsa (ti : fin ni) : ∃ i, (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := ⟨i,eltini ti⟩
 
 -- given a ti, find the corresponding mbs_tree of (tsi ti). The intuition is that this mbs_tree is itself, but of a different type.
 definition mbst_form (ti : fin ni) : mbs_tree := ⟨(tsi ti, val ti),(pmbsa ti)⟩
