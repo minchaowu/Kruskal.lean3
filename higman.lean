@@ -703,7 +703,7 @@ have ∃ f, ¬ is_good f sub, from classical.exists_not_of_not_forall this,
 Higman's_contradiction this)
 
 def wqo_finite_subsets : wqo (finite_subsets Q) :=
-wqo.mk (quasiorder.mk (has_le.mk sub) sub_refl sub_trans) good_star
+⟨⟨⟨sub⟩,sub_refl,sub_trans⟩,good_star⟩
 
 #check wqo_finite_subsets.is_good
 -- example : wqo.le (finite_subsets Q) _ = sub := rfl

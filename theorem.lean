@@ -227,7 +227,7 @@ by_contradiction
  Kruskal's_local_contradiction this)
 
 instance wqo_mbs_tree : wqo mbs_tree :=
-wqo.mk (quasiorder.mk (has_le.mk embeds') embeds'_refl embeds'_trans) embeds'_is_good
+⟨⟨⟨embeds'⟩,embeds'_refl,embeds'_trans⟩,embeds'_is_good⟩
 
 definition wqo_finite_subsets_of_mbs_tree : wqo (finite_subsets mbs_tree) := wqo_finite_subsets
 
@@ -387,6 +387,6 @@ by_contradiction
  Kruskal's_contradiction this)
 
 def wqo_finite_tree : wqo finite_tree :=
-wqo.mk (quasiorder.mk (has_le.mk embeds) embeds_refl @embeds_trans) embeds_is_good
+⟨⟨⟨embeds⟩,embeds_refl,@embeds_trans⟩,embeds_is_good⟩
 
 
