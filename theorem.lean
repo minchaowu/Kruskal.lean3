@@ -285,15 +285,15 @@ parameter eqj : mbs_of_finite_tree j = cons tsj
 -- this reminds us that each branch at the root of (mbs_of_finite_tree i) is in (seq_branches_of_mbs_tree i)
 parameter Htsi : ∀ a, (tsi a, val a) ∈ seq_branches_of_mbs_tree i
 
-lemma eltini (ti : fin ni) : (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := Htsi ti
+-- lemma eltini (ti : fin ni) : (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := Htsi ti
 
 -- every ti corresponds to some seq_branches_of_mbs_tree i
-lemma foo (ti : fin ni) : ∃ i, (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := ⟨i,eltini ti⟩
+lemma foo (ti : fin ni) : ∃ i, (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := ⟨i,Htsi ti⟩
 
 -- given a ti, find the corresponding mbs_tree of (tsi ti). The intuition is that this mbs_tree is itself, but of a different type.
 definition mbst_form (ti : fin ni) : mbs_tree := ⟨(tsi ti, val ti),(foo ti)⟩
 
-theorem mem_mbst_form (a : fin ni) : mbst_form a ∈ elt_mirror i := eltini a
+theorem mem_mbst_form (a : fin ni) : mbst_form a ∈ elt_mirror i := Htsi a
 
 theorem eq_of_mbst_form {a₁ a₂ : fin ni} (Heq : mbst_form a₁ = mbst_form a₂) : a₁ = a₂ :=
 by apply eq_of_veq;super
