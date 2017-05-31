@@ -243,37 +243,37 @@ theorem good_finite_subsets_of_mbs_tree : ∀ f, is_good f os := wqo_finite_subs
 -- However, according to the definition of embeds, f' has to be of type fin n → fin m for some n,m ∈ ℕ, representing a permutation on the labels of the branches. The following construction recovers the desired function from f'.
 
 -- branches at root of mbs_of_finite_tree form a set of mbs_tree
-definition elt_copy_of_seq_branches (n : ℕ) : set mbs_tree := {x : mbs_tree | x.1 ∈ seq_branches_of_mbs_tree n}
+definition elt_mirror (n : ℕ) : set mbs_tree := {x : mbs_tree | x.1 ∈ seq_branches_of_mbs_tree n}
 
-theorem copy_refl_left (x : mbs_tree) (n : ℕ) : x ∈ elt_copy_of_seq_branches n → x.1 ∈ seq_branches_of_mbs_tree n := λ Hx, Hx
+theorem mirror_refl_left (x : mbs_tree) (n : ℕ) : x ∈ elt_mirror n → x.1 ∈ seq_branches_of_mbs_tree n := λ Hx, Hx
 
-theorem copy_refl_right (x : mbs_tree) (n : ℕ) : x.1 ∈ seq_branches_of_mbs_tree n → x ∈ elt_copy_of_seq_branches n := λ Hx, Hx
+theorem mirror_refl_right (x : mbs_tree) (n : ℕ) : x.1 ∈ seq_branches_of_mbs_tree n → x ∈ elt_mirror n := λ Hx, Hx
 
 instance  finite_seq_branches (n : ℕ) : finite (seq_branches_of_mbs_tree n) := finite_branches (mbs_of_finite_tree n)
 
-theorem finite_elt (n : ℕ) : finite (elt_copy_of_seq_branches n) := 
-have mapsto : maps_to subtype.val (elt_copy_of_seq_branches n) (seq_branches_of_mbs_tree n), from λ x Hx, copy_refl_left x n Hx,
-have inj_on subtype.val (elt_copy_of_seq_branches n), from λ x₁ x₂ H₁ H₂, subtype.eq,
+theorem finite_elt (n : ℕ) : finite (elt_mirror n) := 
+have mapsto : maps_to subtype.val (elt_mirror n) (seq_branches_of_mbs_tree n), from λ x Hx, mirror_refl_left x n Hx,
+have inj_on subtype.val (elt_mirror n), from λ x₁ x₂ H₁ H₂, subtype.eq,
 finite_of_inj_on mapsto this
 
 -- this gives a sequence of finite_subsets of mbs_tree. 
--- copy_of_seq_branches 0 is the branches at the root of the first element of the minimal bad sequence of finite_tree.
+-- mirror_of_seq_branches 0 is the branches at the root of the first element of the minimal bad sequence of finite_tree.
 
-definition copy_of_seq_branches (n : ℕ) : finite_subsets mbs_tree := ⟨elt_copy_of_seq_branches n, finite_elt n⟩
+definition mirror (n : ℕ) : finite_subsets mbs_tree := ⟨elt_mirror n, finite_elt n⟩
 
--- (copy_of_seq_branches i) is the collection of branches at the root of (mbs_of_finite_tree i)
+-- (mirror i) is the collection of branches at the root of (mbs_of_finite_tree i)
 
-theorem good_copy : ∃ i j, i < j ∧ os (copy_of_seq_branches i) (copy_of_seq_branches j) := good_finite_subsets_of_mbs_tree copy_of_seq_branches
+theorem good_mirror : ∃ i j, i < j ∧ os (mirror i) (mirror j) := good_finite_subsets_of_mbs_tree mirror
 
 section
--- destruct the statement: os (copy_of_seq_branches i) (copy_of_seq_branches j)
+-- destruct the statement: os (mirror i) (mirror j)
 -- we want to show that there exists some i j such that (mbs_of_finite_tree i ≼ mbs_of_finite_tree j)
--- fortunately, i and j from good_copy suffice
+-- fortunately, i and j from good_mirror suffice
 -- this section tries to get an injection "recover" : fin ni → fin nj such that tsi ti ≼ tsj (recover ti) assuming that (mbs_of_finite_tree i = cons tsi) and (mbs_of_finite_tree j = cons tsj). Note that both are not nodes.
 parameters {i j : ℕ}
 -- -- since finite_subsets_of_mbs_tree is good, we have an injection f' from some set of branches to some set of branches. This is because each set of branches is a subset of mbs_tree.
 parameter f' : mbs_tree → mbs_tree 
-parameter inj : inj_from_to f' (elt_copy_of_seq_branches i) (elt_copy_of_seq_branches j)
+parameter inj : inj_from_to f' (elt_mirror i) (elt_mirror j)
 -- -- of course, it is also nondescending by definition.
 parameter nond : ∀ a : mbs_tree, a.val ∈ seq_branches_of_mbs_tree i → a.val.1 ≼ (f' a).val.1 ∧  (f' a).val ∈ seq_branches_of_mbs_tree j
 -- suppose (mbs_of_finite_tree i) is of the form (cons tsi)
@@ -288,12 +288,12 @@ parameter Htsi : ∀ a, (tsi a, val a) ∈ seq_branches_of_mbs_tree i
 lemma eltini (ti : fin ni) : (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := Htsi ti
 
 -- every ti corresponds to some seq_branches_of_mbs_tree i
-lemma pmbsa (ti : fin ni) : ∃ i, (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := ⟨i,eltini ti⟩
+lemma foo (ti : fin ni) : ∃ i, (tsi ti, val ti) ∈ seq_branches_of_mbs_tree i := ⟨i,eltini ti⟩
 
 -- given a ti, find the corresponding mbs_tree of (tsi ti). The intuition is that this mbs_tree is itself, but of a different type.
-definition mbst_form (ti : fin ni) : mbs_tree := ⟨(tsi ti, val ti),(pmbsa ti)⟩
+definition mbst_form (ti : fin ni) : mbs_tree := ⟨(tsi ti, val ti),(foo ti)⟩
 
-theorem mem_mbst_form (a : fin ni) : mbst_form a ∈ elt_copy_of_seq_branches i := eltini a
+theorem mem_mbst_form (a : fin ni) : mbst_form a ∈ elt_mirror i := eltini a
 
 theorem eq_of_mbst_form {a₁ a₂ : fin ni} (Heq : mbst_form a₁ = mbst_form a₂) : a₁ = a₂ :=
 by apply eq_of_veq;super
@@ -355,7 +355,7 @@ have eq1 : (f' (mbst_form a₁)).val.1 = (f' (mbst_form a₂)).val.1, by rw [-pr
 have (f' (mbst_form a₁)).val.2 = (f' (mbst_form a₂)).val.2, by rw [-pr22,-pr21,Heq],
 have (f' (mbst_form a₁)).val = (f' (mbst_form a₂)).val, from eq_of_prod eq1 this,
 have f'eq : f' (mbst_form a₁) = f' (mbst_form a₂), from subtype.eq this,
-have ∀ x₁ x₂ : mbs_tree, x₁ ∈ elt_copy_of_seq_branches i → x₂ ∈ elt_copy_of_seq_branches i → f' x₁ = f' x₂ → x₁ = x₂, from and.right inj,
+have ∀ x₁ x₂ : mbs_tree, x₁ ∈ elt_mirror i → x₂ ∈ elt_mirror i → f' x₁ = f' x₂ → x₁ = x₂, from and.right inj,
 have mbst_form a₁ = mbst_form a₂, from this (mbst_form a₁) (mbst_form a₂) (mem_mbst_form a₁) (mem_mbst_form a₂) f'eq,
 show _, from eq_of_mbst_form this
 
@@ -365,7 +365,7 @@ end
 #check inj_recover
 
 theorem good_mbs_of_finite_tree :  ∃ i j, i < j ∧ mbs_of_finite_tree i ≼ mbs_of_finite_tree j :=
-let ⟨i,j,⟨iltj,⟨f',⟨inj,nond⟩⟩⟩⟩ := good_copy in
+let ⟨i,j,⟨iltj,⟨f',⟨inj,nond⟩⟩⟩⟩ := good_mirror in
 let ⟨ni,tsi,htsi⟩ := @finite_tree_destruct (mbs_of_finite_tree i) in
 let ⟨nj,tsj,htsj⟩ := @finite_tree_destruct (mbs_of_finite_tree j) in
 have Htsi : ∀ a, (tsi a, val a) ∈ seq_branches_of_mbs_tree i, from take a, mem_of_seq_branches tsi a htsi,
