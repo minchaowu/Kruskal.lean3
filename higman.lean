@@ -30,17 +30,17 @@ by_cases
  have succ k ≤ a, from succ_le_of_lt this,
  by simp [this, hk])
 
-theorem sub_gt_of_gt {a b c : ℕ} (H1 : a > b) (H2 : b > c) : a - c > b - c :=
-have c ≤ a, from le_of_lt (gt.trans H1 H2),
+theorem sub_gt_of_gt_ge {a b c : ℕ} (H1 : a > b) (H2 : b ≥ c) : a - c > b - c :=
+have c ≤ a, from le_of_lt (lt_of_le_of_lt H2 H1),
 have eq₁ : a - c + c = a, from nat.sub_add_cancel this,
-have c ≤ b, from le_of_lt H2,
-have eq₂ : b - c + c = b, from nat.sub_add_cancel this,
+have eq₂ : b - c + c = b, from nat.sub_add_cancel H2,
 have b ≤ a, from le_of_lt H1,
 have b - c ≤ a - c, from nat.sub_le_sub_right this c,
 or.elim (nat.lt_or_eq_of_le this)
 (assume Hl, Hl)
 (assume Hr, have refl : a > a, by super,
  absurd refl (lt_irrefl a))
+
 
 theorem lt_pred_nonzero_self {n : ℕ} (H : n ≠ 0) : pred n < n :=
 have ∃ k, n = succ k, from exists_eq_succ_of_ne_zero H,
@@ -308,78 +308,120 @@ parameter Hg : ¬ is_good g o
 -- in Higman's lemma in Williams 1963, h is f, g is the bad sequence B ∘ f
 parameter H : ∀ i j, o (f i) (g (j - h 0)) → o (f i) (f (h (j - h 0))) 
 
-definition comb (n : ℕ) : Q := if h 0 ≠ 0 ∧ n ≤ pred (h 0) then f n else g (n - (h 0))
+-- definition comb (n : ℕ) : Q := if h 0 ≠ 0 ∧ n ≤ pred (h 0) then f n else g (n - (h 0))
 
--- def comb' (n : ℕ) : Q := if n < h 0 then f n else g (n - (h 0))
+-- -- def comb' (n : ℕ) : Q := if n < h 0 then f n else g (n - (h 0))
 
--- theorem g_part_of_comb' (H : (h 0) = 0) : ∀ x, comb' x = g x :=
--- λ n, have ¬ n < h 0, by rw H; apply not_lt_zero ,
--- have comb' n = g (n - (h 0)), from if_neg this,
+-- -- theorem g_part_of_comb' (H : (h 0) = 0) : ∀ x, comb' x = g x :=
+-- -- λ n, have ¬ n < h 0, by rw H; apply not_lt_zero ,
+-- -- have comb' n = g (n - (h 0)), from if_neg this,
+-- -- by simp [this, H]
+
+
+-- theorem g_part_of_comb (H : (h 0) = 0) : ∀ x, comb x = g x :=
+-- take n, have ¬ (h 0) ≠ 0, from not_not_intro H,
+-- have ¬ ((h 0) ≠ 0 ∧ n ≤ pred (h 0)), from not_and_of_not_left (n ≤ pred (h 0)) this,
+-- have comb n = g (n - (h 0)), from if_neg this,
 -- by simp [this, H]
 
+-- theorem badness_of_comb : ¬ is_good comb o := 
+-- λ good, 
+-- let ⟨i,j,hw⟩ := good in
+-- by_cases
+-- (suppose (h 0) = 0, 
+-- have comb = g, begin apply funext, apply g_part_of_comb, exact this end,
+-- have is_good g o, by rw this at good;exact good,
+-- Hg this)
+-- (assume ne, 
+--   by_cases
+--   (assume Hposi : i ≤ pred (h 0), 
+--    have eq1i : comb i = f i, from if_pos ⟨ne, Hposi⟩,
+--    by_cases
+--      (suppose j ≤ pred (h 0), 
+--       have eq1j : comb j = f j, from if_pos ⟨ne, this⟩, 
+--       have o (comb i) (comb j), from hw^.right,
+--       have o (comb i) (f j), by rw eq1j at this; exact this,
+--       have o (f i) (f j), begin rw -eq1i, exact this end,
+--       have is_good f o, from ⟨i, ⟨j,⟨hw^.left,this⟩⟩⟩,
+--       show _, from Hf this)
+--      (suppose ¬ j ≤ pred (h 0), 
+--       have ¬ ((h 0) ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
+--       have eq2j : comb j = g (j - (h 0)), from if_neg this, 
+--       have o (f i) (g (j - (h 0))), begin rw [-eq2j,-eq1i], exact hw^.right end,
+--      have Hr : o (f i) (f (h (j - (h 0)))), from H _ _ this,
+--      have i < h (j - (h 0)), from
+--        have ilth0 : i < h 0, from lt_of_le_of_lt Hposi (lt_pred_nonzero_self ne),
+--        have h 0 ≤ h (j - h 0), from Hh (j - h 0), 
+--        show _, from lt_of_lt_of_le ilth0 this,
+--      have is_good f o, from ⟨i, ⟨h (j - h 0), ⟨this, Hr⟩⟩⟩,
+--      show _, from Hf this))
+--   (assume Hnegi, 
+--    have iht : pred (h 0) < i, from lt_of_not_ge Hnegi,
+--    have ¬ (h 0 ≠ 0 ∧ i ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegi,
+--    have eq2i : comb i = g (i - h 0), from if_neg this,
+--    by_cases
+--    (assume Hposj : j ≤ pred (h 0), 
+--     have j < i, from lt_of_le_of_lt Hposj iht,
+--     show _, from (not_lt_of_gt hw^.left) this)
+--    (assume Hnegj, 
+--     have pred (h 0) < j, from lt_of_not_ge Hnegj,
+--     have ¬ (h 0 ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegj,
+--     have eq2j : comb j = g (j - h 0), from if_neg this,
+--     have o (comb i) (comb j), from hw^.right,
+--     have o (comb i) (g (j - h 0)), begin rw -eq2j, exact this end, --by simp,
+--     have Hr2 : o (g (i - h 0)) (g (j - h 0)), begin rw -eq2i, exact this end,-- by simp,
+--     have ige : h 0 ≤ i, from gt_of_gt_pred iht,
+--     have jgt : h 0 < j, from lt_of_le_of_lt ige hw^.left,
+--     have i - h 0 < j - h 0, from 
+--      or.elim (lt_or_eq_of_le ige)
+--      (assume hl, sub_gt_of_gt hw^.left hl)
+--      (assume hr, have 0 < j - h 0, from nat.sub_pos_of_lt jgt, 
+--       have i - h 0 = 0, begin rw hr, apply nat.sub_self end,
+--       begin rw this, assumption end),
+--       have is_good g o, from ⟨(i - h 0), ⟨(j - h 0),⟨this, Hr2⟩⟩⟩,
+--      show _, from Hg this)))
+
+-- new comb --
+definition comb (n : ℕ) : Q := if n < h 0 then f n else g (n - h 0)
 
 theorem g_part_of_comb (H : (h 0) = 0) : ∀ x, comb x = g x :=
-take n, have ¬ (h 0) ≠ 0, from not_not_intro H,
-have ¬ ((h 0) ≠ 0 ∧ n ≤ pred (h 0)), from not_and_of_not_left (n ≤ pred (h 0)) this,
+λ n, have ¬ n < h 0, by rw H; apply not_lt_zero ,
 have comb n = g (n - (h 0)), from if_neg this,
 by simp [this, H]
 
+include Hh
+
 theorem badness_of_comb : ¬ is_good comb o := 
-λ good, 
-let ⟨i,j,hw⟩ := good in
+λ good, let ⟨i,j,hw⟩ := good in
 by_cases
-(suppose (h 0) = 0, 
-have comb = g, begin apply funext, apply g_part_of_comb, exact this end,
-have is_good g o, by rw this at good;exact good,
-Hg this)
-(assume ne, 
+(assume Hposi : i < h 0, 
+  have eq1i : comb i = f i, from if_pos Hposi,
+  by_cases 
+  (suppose j < h 0, 
+    have eq1j : comb j = f j, from if_pos this, 
+    have o (f i) (f j),by rw [-eq1j,-eq1i]; exact hw^.right,
+    have is_good f o, from ⟨i, ⟨j,⟨hw^.left,this⟩⟩⟩,
+    show _, from Hf this)
+  (suppose ¬ j < h 0,
+    have eq2j : comb j = g (j - (h 0)), from if_neg this, 
+    have o (f i) (g (j - (h 0))), by rw [-eq2j,-eq1i]; exact hw^.right,
+    have Hr : o (f i) (f (h (j - (h 0)))), from H _ _ this,
+    have i < h (j - (h 0)), from lt_of_lt_of_le Hposi (Hh _),
+    have is_good f o, from ⟨i, ⟨h (j - h 0), ⟨this, Hr⟩⟩⟩,
+    show _, from Hf this))
+(assume Hnegi, 
+  have eq2i : comb i = g (i - h 0), from if_neg Hnegi,
   by_cases
-  (assume Hposi : i ≤ pred (h 0), 
-   have eq1i : comb i = f i, from if_pos ⟨ne, Hposi⟩,
-   by_cases
-     (suppose j ≤ pred (h 0), 
-      have eq1j : comb j = f j, from if_pos ⟨ne, this⟩, 
-      have o (comb i) (comb j), from hw^.right,
-      have o (comb i) (f j), by rw eq1j at this; exact this,
-      have o (f i) (f j), begin rw -eq1i, exact this end,
-      have is_good f o, from ⟨i, ⟨j,⟨hw^.left,this⟩⟩⟩,
-      show _, from Hf this)
-     (suppose ¬ j ≤ pred (h 0), 
-      have ¬ ((h 0) ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
-      have eq2j : comb j = g (j - (h 0)), from if_neg this, 
-      have o (f i) (g (j - (h 0))), begin rw [-eq2j,-eq1i], exact hw^.right end,
-     have Hr : o (f i) (f (h (j - (h 0)))), from H _ _ this,
-     have i < h (j - (h 0)), from
-       have ilth0 : i < h 0, from lt_of_le_of_lt Hposi (lt_pred_nonzero_self ne),
-       have h 0 ≤ h (j - h 0), from Hh (j - h 0), 
-       show _, from lt_of_lt_of_le ilth0 this,
-     have is_good f o, from ⟨i, ⟨h (j - h 0), ⟨this, Hr⟩⟩⟩,
-     show _, from Hf this))
-  (assume Hnegi, 
-   have iht : pred (h 0) < i, from lt_of_not_ge Hnegi,
-   have ¬ (h 0 ≠ 0 ∧ i ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegi,
-   have eq2i : comb i = g (i - h 0), from if_neg this,
-   by_cases
-   (assume Hposj : j ≤ pred (h 0), 
-    have j < i, from lt_of_le_of_lt Hposj iht,
+  (suppose j < h 0,
+    have j < i, from lt_of_lt_of_le this (le_of_not_gt Hnegi),
     show _, from (not_lt_of_gt hw^.left) this)
-   (assume Hnegj, 
-    have pred (h 0) < j, from lt_of_not_ge Hnegj,
-    have ¬ (h 0 ≠ 0 ∧ j ≤ pred (h 0)), from not_and_of_not_right (h 0 ≠ 0) Hnegj,
+  (suppose ¬ j < h 0, 
     have eq2j : comb j = g (j - h 0), from if_neg this,
-    have o (comb i) (comb j), from hw^.right,
-    have o (comb i) (g (j - h 0)), begin rw -eq2j, exact this end, --by simp,
-    have Hr2 : o (g (i - h 0)) (g (j - h 0)), begin rw -eq2i, exact this end,-- by simp,
-    have ige : h 0 ≤ i, from gt_of_gt_pred iht,
-    have jgt : h 0 < j, from lt_of_le_of_lt ige hw^.left,
-    have i - h 0 < j - h 0, from 
-     or.elim (lt_or_eq_of_le ige)
-     (assume hl, sub_gt_of_gt hw^.left hl)
-     (assume hr, have 0 < j - h 0, from nat.sub_pos_of_lt jgt, 
-      have i - h 0 = 0, begin rw hr, apply nat.sub_self end,
-      begin rw this, assumption end),
-      have is_good g o, from ⟨(i - h 0), ⟨(j - h 0),⟨this, Hr2⟩⟩⟩,
-     show _, from Hg this)))
+    have Hr2 : o (g (i - h 0)) (g (j - h 0)), by rw [-eq2i,-eq2j]; exact hw^.right,
+    have i - h 0 < j - h 0, from sub_gt_of_gt_ge hw^.left (le_of_not_gt Hnegi),
+    have is_good g o, from ⟨(i - h 0), ⟨(j - h 0),⟨this, Hr2⟩⟩⟩,
+    show _, from Hg this))
+
 
 end
 
@@ -405,20 +447,34 @@ begin apply g_part_of_comb, assumption end
 theorem badness_of_comb_seq_with_mbs : ¬ is_good comb_seq_with_mbs o := 
 badness_of_comb (minimal_bad_seq m Hex) g h Hh (badness_of_mbs m Hex) Hg H
 
+-- theorem comb_seq_extends_mbs_at_pred_bp (H : h 0 ≠ 0): extends_at (pred (h 0)) (minimal_bad_seq m Hex) comb_seq_with_mbs := 
+-- λ m Hm, if_pos ⟨H, Hm⟩
+
+theorem lt_of_le_pred' {n m : ℕ} : n ≤ pred m →  n < m ∨ n = 0 :=
+nat.rec_on m (λ h, or.elim (lt_or_eq_of_le h) (λ l, by super) (λ r, or.inr r)) 
+(λ a ih h, or.inl (lt_succ_of_le h))
+
+theorem lt_of_le_pred {n m : ℕ} : n ≤ pred m →  n < m ∨ m = 0 :=
+nat.rec_on m (λ h, or.inr rfl) (λ a ih h, or.inl (lt_succ_of_le h))
+
 theorem comb_seq_extends_mbs_at_pred_bp (H : h 0 ≠ 0): extends_at (pred (h 0)) (minimal_bad_seq m Hex) comb_seq_with_mbs := 
-λ m Hm, if_pos ⟨H, Hm⟩
+λ m Hm, if_pos (or_resolve_left (lt_of_le_pred Hm) H)
+
+#check succ_le_succ
 
 lemma comb_seq_h0 : comb_seq_with_mbs (h 0) = g 0 := 
-by_cases
-(suppose h 0 = 0, 
-have comb_seq_with_mbs (h 0) = g (h 0), from g_part_of_comb_seq_with_mbs this (h 0),
-by super)
-(suppose h 0 ≠ 0, 
-have pred (h 0) < h 0, from lt_pred_nonzero_self this,
-have ¬ h 0 ≤ pred (h 0), from not_le_of_gt this,
-have ¬ ((h 0) ≠ 0 ∧ h 0 ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
-have comb_seq_with_mbs (h 0) = g (h 0 - h 0), from if_neg this,
-by simp [this,nat.sub_self])
+have comb_seq_with_mbs (h 0) = g (h 0 - h 0), begin apply if_neg, rw lt_self_iff_false, trivial end,
+by simp [this,nat.sub_self]
+-- by_cases
+-- (suppose h 0 = 0, 
+-- have comb_seq_with_mbs (h 0) = g (h 0), from g_part_of_comb_seq_with_mbs this (h 0),
+-- by super)
+-- (suppose h 0 ≠ 0, 
+-- have pred (h 0) < h 0, from lt_pred_nonzero_self this,
+-- have ¬ h 0 ≤ pred (h 0), from not_le_of_gt this,
+-- have ¬ ((h 0) ≠ 0 ∧ h 0 ≤ pred (h 0)), from not_and_of_not_right ((h 0) ≠ 0) this,
+-- have comb_seq_with_mbs (h 0) = g (h 0 - h 0), from if_neg this,
+-- by simp [this,nat.sub_self])
 
 include Hbp Hex
 
