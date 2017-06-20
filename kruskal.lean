@@ -144,12 +144,6 @@ def size : finite_tree → ℕ
 theorem pos_of_size (t : finite_tree) : 0 < size t :=
 finite_tree.rec_on t (λ n ts ih, dec_trivial)
 
-section
-parameter ts : fin 0 → finite_tree
-parameter f : ℕ → ℕ
-
-end
-
 theorem lt_of_size_branches_aux {n : ℕ} (ts : fin n → finite_tree) (k : fin n) : size (ts k) < Suml (λ i, size (ts i)) (upto n) + 1 := 
 begin
 assert kin : k ∈ upto n, exact mem_upto n k,
