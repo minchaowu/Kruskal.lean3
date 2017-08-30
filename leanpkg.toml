@@ -1,0 +1,6 @@
+[package]
+name = "kruskal"
+version = "0.1"
+
+[dependencies]
+mathlib = {git = "https://github.com/minchaowu/mathlib.git"}
