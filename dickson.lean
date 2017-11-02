@@ -42,7 +42,7 @@ def terminal {A : Type} (o : A → A → Prop) (f : ℕ → A) (m : ℕ) :=
 
 theorem lt_of_non_terminal {A : Type} {o : A → A → Prop} {f : ℕ → A} {m : ℕ} (H : ¬ @terminal _ o f m) : 
   ∃ n, m < n ∧ o (f m) (f n) :=
-let ⟨n,h⟩ := exists_not_of_not_forall H in ⟨n,(and_of_not_imp h)⟩
+let ⟨n,h⟩ := iff.mp classical.not_forall H in ⟨n,(and_of_not_imp h)⟩
 
 section
 parameter {A : Type}
@@ -88,7 +88,7 @@ parameter f : ℕ → A
 
 theorem finite_terminal : ∃ N, ∀ r, N < r → ¬ terminal o.le f r := 
 have ¬ ∀ N, ∃ r, N < r ∧ @terminal A o.le f r, by apply local_contradiction,
-have ∃ N, ¬ ∃ r, N < r ∧ @terminal A o.le f r, by rw ←classical.not_forall_iff; exact this,
+have ∃ N, ¬ ∃ r, N < r ∧ @terminal A o.le f r, by rw ←classical.not_forall; exact this,
 let ⟨n,h⟩ := this in 
 have ∀ r, n < r → ¬ @terminal A o.le f r, from λ r lt neg, h ⟨r,⟨lt, neg⟩⟩,
 ⟨n,this⟩
