@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Minchao Wu
 -/
 
-import _target.deps.mathlib.tactic.finish
+import tactic.finish
 open classical nat function prod subtype
 
 noncomputable theory

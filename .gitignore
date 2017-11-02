@@ -60,3 +60,4 @@ Temporary Items
 *.lean~
 _target/
 leanpkg.path
+temp*
