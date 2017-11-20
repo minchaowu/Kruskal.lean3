@@ -3,4 +3,4 @@ name = "kruskal"
 version = "0.1"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover/mathlib.git", rev = "2883c1bb3ccc9d68fe0950ff1c3a5d7fc9827e70"}
+mathlib = {git = "https://github.com/leanprover/mathlib.git", rev = "40d2b50"}
