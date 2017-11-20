@@ -58,11 +58,11 @@ have f s ∈ image f S, from ⟨s, ⟨h,rfl⟩⟩,
 set.ne_empty_of_mem this
 
 theorem not_mem_singleton {A : Type} (x a : A) (H : x ≠ a) : x ∉ insert a (∅ : set A) :=
-suppose x ∈ insert a ∅, H (eq_of_mem_singleton this)
+λ h : x ∈ insert a ∅, H (eq_of_mem_singleton h)
 
 theorem refl_of_diff_of_ins_singleton {A : Type} {a : A} {S : set A} (H : a ∉ S) : S = (insert a S) \ insert a ∅ :=
 subset.antisymm 
-(λ x h, ⟨or.inr h,(λ neg, have x = a, from eq_of_mem_singleton neg,by super)⟩) 
+(λ x h, ⟨or.inr h,(λ neg, have x = a, from eq_of_mem_singleton neg, by finish)⟩) 
 (λ x ⟨hl,hr⟩, or.elim hl (λ l, 
 have x ∈ insert a (∅ : set A), begin rw l, apply mem_singleton end, 
 by contradiction) (λ r,r))
@@ -83,7 +83,7 @@ definition ran_g : set ℕ := {x : ℕ | ∃ i, g i = x}
 
 theorem ne_empty_ran : ran_g ≠ ∅ := set.ne_empty_of_mem ⟨0,rfl⟩
 
-private definition min : ℕ := least ran_g ne_empty_ran
+private def min : ℕ := least ran_g ne_empty_ran
 
 definition index_of_min : ℕ :=
 have min ∈ ran_g, from least_is_mem ran_g ne_empty_ran,
